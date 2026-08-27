@@ -34,6 +34,9 @@
             <Component Id="LicenseComponent" Guid="44BF8483-5A1C-44BB-ADDB-254DDE11F90F" Win64="yes">
               <File Id="LicenseFile" Source="$(var.SourceDir)\LICENSE" Name="LICENSE.txt" KeyPath="yes" />
             </Component>
+            <Component Id="ThirdPartyNoticesComponent" Guid="6A9F8E39-2F35-4BC0-915A-5D86D5F88B7F" Win64="yes">
+              <File Id="ThirdPartyNoticesFile" Source="$(var.SourceDir)\THIRD_PARTY_NOTICES.md" Name="THIRD_PARTY_NOTICES.md" KeyPath="yes" />
+            </Component>
           </Directory>
         </Directory>
       </Directory>
@@ -64,6 +67,7 @@
     <Feature Id="CompleteFeature" Title="VOIDWORM" Level="1" Absent="disallow">
       <ComponentRef Id="StandaloneComponent" />
       <ComponentRef Id="LicenseComponent" />
+      <ComponentRef Id="ThirdPartyNoticesComponent" />
       <ComponentRef Id="VST3IconComponent" />
       <ComponentRef Id="VST3ModuleInfoComponent" />
       <ComponentRef Id="VST3BinaryComponent" />

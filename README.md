@@ -12,7 +12,7 @@
   <a href="#download"><img alt="VST3 and Standalone — downloads" src="https://img.shields.io/badge/formats-VST3%20%7C%20Standalone-FF0051?style=flat-square&amp;labelColor=28171D"></a>
   <a href="https://github.com/juce-framework/JUCE/releases/tag/8.0.8"><img alt="JUCE 8.0.8" src="https://img.shields.io/badge/JUCE-8.0.8-00A8B5?style=flat-square&amp;labelColor=152326"></a>
   <a href="CMakeLists.txt"><img alt="C++17 project definition" src="https://img.shields.io/badge/C%2B%2B-17-F0A030?style=flat-square&amp;labelColor=282116"></a>
-  <a href="LICENSE"><img alt="VOIDWORM attribution license" src="https://img.shields.io/badge/license-Attribution-7ED321?style=flat-square&amp;labelColor=182519&amp;logo=opensourceinitiative&amp;logoColor=white"></a>
+  <a href="LICENSE"><img alt="GNU AGPL v3 license" src="https://img.shields.io/badge/license-AGPL--3.0-7ED321?style=flat-square&amp;labelColor=182519&amp;logo=gnu&amp;logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -142,8 +142,14 @@ Built with C++17, JUCE 8.0.8, and CMake.
 
 </details>
 
+## License
+
+Copyright © 2026 lewonn / LWNX DSP.
+
+Original VOIDWORM source code and original project assets are free and open-source software under the [GNU Affero General Public License v3.0](LICENSE). JUCE and all other third-party components remain under their respective licences; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ---
 
 <p align="center"><strong>VOIDWORM 1.0.0 · LWNX DSP</strong></p>
 
-<p align="center"><sub>© 2026 lewonn / LWNX DSP. Usage permitted with attribution — see LICENSE.</sub></p>
+<p align="center"><sub>© 2026 lewonn / LWNX DSP. Free and open-source software under GNU AGPL v3 — see LICENSE.</sub></p>

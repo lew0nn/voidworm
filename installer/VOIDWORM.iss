@@ -53,6 +53,8 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 [Files]
 Source: "..\VOIDWORM_Master_Artwork_512.png"; Flags: dontcopy
 Source: "assets\VOIDWORM_Installer_Icon.ico"; DestDir: "{app}"; DestName: "VOIDWORM.ico"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\VOIDWORM.vst3\*"; DestDir: "{commoncf64}\VST3\VOIDWORM.vst3"; Components: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\dist\VOIDWORM.exe"; DestDir: "{app}"; Components: standalone; Flags: ignoreversion
 
