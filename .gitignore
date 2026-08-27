@@ -1,0 +1,41 @@
+# Generated build trees and IDE state
+/build/
+/build-*/
+/out/
+/dist/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/Testing/
+/.vs/
+/.vscode/
+/.VSCodeCounter/
+/.idea/
+CMakeUserPresets.json
+*.sln
+*.vcxproj*
+*.user
+
+# Compiled and packaged plug-ins
+/VOIDWORM.vst3/
+/*.zip
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.dll
+*.exe
+
+# Local UI iteration and debug captures
+/ui-*.png
+/screenshot-*.png
+/capture-*.png
+/artifacts/
+/Source/Assets/damaged_steel_background_v1.png
+/Source/Assets/industrial_metal_v1.png
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini

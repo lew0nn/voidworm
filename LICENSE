@@ -1,0 +1,45 @@
+VOIDWORM License
+
+Copyright (c) 2026 lewonn / LWNX DSP
+
+Permission is granted to use, copy, modify, redistribute, and create derivative
+works from the VOIDWORM source code for any non-commercial purpose.
+
+You may alter the source code in any way, provided reasonable attribution to the
+original author and project is retained.
+
+Required attribution:
+
+lewonn / LWNX DSP
+Original project: VOIDWORM
+[https://github.com/lew0nn/voidworm](https://github.com/lew0nn/voidworm)
+
+Attribution may be provided in documentation, source notices, a README, credits,
+an About page, or another reasonably visible location.
+
+# COMMERCIAL USE
+
+Commercial use, sale, licensing, sublicensing, or commercial distribution of
+VOIDWORM, modified versions of VOIDWORM, or software substantially derived from
+the VOIDWORM source code requires prior written permission from the author.
+
+Commercial terms may be discussed directly with the author.
+
+Granting commercial permission does not remove the attribution requirement unless
+explicitly agreed otherwise in writing.
+
+# ATTRIBUTION
+
+Attribution must not imply endorsement, affiliation, or that a modified or
+third-party version is an official VOIDWORM or LWNX DSP release.
+
+# THIRD-PARTY COMPONENTS
+
+Third-party software and dependencies, including JUCE, remain subject to their
+respective licenses and are not relicensed by this document.
+
+# DISCLAIMER
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product
+    Id="*"
+    Name="VOIDWORM"
+    Language="1033"
+    Version="1.0.0"
+    Manufacturer="LWNX DSP"
+    UpgradeCode="C0A17322-EC44-49AE-89CD-9ADC02DD35DE">
+
+    <Package
+      InstallerVersion="500"
+      Compressed="yes"
+      InstallScope="perMachine"
+      Platform="x64"
+      Description="VOIDWORM"
+      Manufacturer="LWNX DSP" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of VOIDWORM is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="ARPCONTACT" Value="lewonn / LWNX DSP" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/lew0nn/voidworm" />
+    <Property Id="ARPPRODUCTICON" Value="VoidwormProductIcon" />
+    <Icon Id="VoidwormProductIcon" SourceFile="$(var.SourceDir)\installer\assets\VOIDWORM_Installer_Icon.ico" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="CompanyFolder" Name="LWNX DSP">
+          <Directory Id="INSTALLFOLDER" Name="VOIDWORM">
+            <Component Id="StandaloneComponent" Guid="7AB80FDA-A21A-43B6-9C44-8B8741908303" Win64="yes">
+              <File Id="StandaloneExe" Source="$(var.DistDir)\VOIDWORM.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="LicenseComponent" Guid="44BF8483-5A1C-44BB-ADDB-254DDE11F90F" Win64="yes">
+              <File Id="LicenseFile" Source="$(var.SourceDir)\LICENSE" Name="LICENSE.txt" KeyPath="yes" />
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+
+      <Directory Id="CommonFiles64Folder">
+        <Directory Id="VST3CommonFolder" Name="VST3">
+          <Directory Id="VST3BundleFolder" Name="VOIDWORM.vst3">
+            <Component Id="VST3IconComponent" Guid="C1997900-9944-493E-8AEA-8EA2C109B679" Win64="yes">
+              <File Id="VST3IconFile" Source="$(var.DistDir)\VOIDWORM.vst3\Plugin.ico" KeyPath="yes" />
+            </Component>
+            <Directory Id="VST3ContentsFolder" Name="Contents">
+              <Directory Id="VST3ResourcesFolder" Name="Resources">
+                <Component Id="VST3ModuleInfoComponent" Guid="CAA9F5E0-4D32-4BF0-92F0-23B4BB53454C" Win64="yes">
+                  <File Id="VST3ModuleInfoFile" Source="$(var.DistDir)\VOIDWORM.vst3\Contents\Resources\moduleinfo.json" KeyPath="yes" />
+                </Component>
+              </Directory>
+              <Directory Id="VST3BinaryFolder" Name="x86_64-win">
+                <Component Id="VST3BinaryComponent" Guid="65A3703C-2766-4F0C-9BA6-C593C177D06E" Win64="yes">
+                  <File Id="VST3BinaryFile" Source="$(var.DistDir)\VOIDWORM.vst3\Contents\x86_64-win\VOIDWORM.vst3" KeyPath="yes" />
+                </Component>
+              </Directory>
+            </Directory>
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Feature Id="CompleteFeature" Title="VOIDWORM" Level="1" Absent="disallow">
+      <ComponentRef Id="StandaloneComponent" />
+      <ComponentRef Id="LicenseComponent" />
+      <ComponentRef Id="VST3IconComponent" />
+      <ComponentRef Id="VST3ModuleInfoComponent" />
+      <ComponentRef Id="VST3BinaryComponent" />
+    </Feature>
+  </Product>
+</Wix>
