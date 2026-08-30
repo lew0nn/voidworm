@@ -869,42 +869,94 @@ void VoidwormAudioProcessorEditor::OverlayPanel::paint (juce::Graphics& g)
         g.setFont (juce::FontOptions (uiStyle::sectionFont).withName ("Bahnschrift").withStyle ("SemiBold"));
         g.drawText ("APPEARANCE", juce::Rectangle<float> (controls.getX(), appearanceY,
                     controls.getWidth(), 16.0f).toNearestInt(), juce::Justification::centredLeft);
-        const auto folder = juce::Rectangle<float> (controls.getX(), appearanceY + 17.0f, controls.getWidth(), 40.0f);
-        const auto folderHovered = folder.contains (hoverPoint);
-        g.setColour (folderHovered ? uiStyle::utilityHover : uiStyle::utilityRaised);
-        g.fillRoundedRectangle (folder, 3.0f);
+        const auto themeSelector = juce::Rectangle<float> (controls.getX(), appearanceY + 17.0f,
+                                                            controls.getWidth(), 40.0f);
+        const auto selectorHovered = themeSelector.contains (hoverPoint);
+        g.setColour (selectorHovered ? uiStyle::utilityHover : uiStyle::utilityRaised);
+        g.fillRoundedRectangle (themeSelector, 3.0f);
         g.setColour (settingsThemesExpanded ? accent.withAlpha (0.70f)
-                                             : uiStyle::utilityEdge.withAlpha (folderHovered ? 0.78f : 0.52f));
-        g.drawRoundedRectangle (folder, 3.0f, settingsThemesExpanded ? 0.9f : 0.65f);
-        juce::Path folderGlyph;
-        folderGlyph.startNewSubPath (folder.getX() + 9.0f, folder.getY() + 12.0f);
-        folderGlyph.lineTo (folder.getX() + 15.0f, folder.getY() + 12.0f);
-        folderGlyph.lineTo (folder.getX() + 18.0f, folder.getY() + 15.0f);
-        folderGlyph.lineTo (folder.getX() + 29.0f, folder.getY() + 15.0f);
-        folderGlyph.lineTo (folder.getX() + 29.0f, folder.getY() + 28.0f);
-        folderGlyph.lineTo (folder.getX() + 9.0f, folder.getY() + 28.0f);
-        folderGlyph.closeSubPath();
-        g.setColour (folderHovered || settingsThemesExpanded ? accent.withAlpha (0.86f) : dim.withAlpha (0.72f));
-        g.strokePath (folderGlyph, juce::PathStrokeType (0.9f));
+                                             : uiStyle::utilityEdge.withAlpha (selectorHovered ? 0.78f : 0.52f));
+        g.drawRoundedRectangle (themeSelector, 3.0f, settingsThemesExpanded ? 0.9f : 0.65f);
+
+        const auto pivot = juce::Point<float> (themeSelector.getX() + 12.5f, themeSelector.getY() + 30.0f);
+        const auto swatchBounds = juce::Rectangle<float> (pivot.x - 2.8f, pivot.y - 21.0f, 14.0f, 21.9f);
+        const auto makeSwatch = [] (juce::Rectangle<float> bounds)
+        {
+            constexpr auto cut = 2.1f;
+            juce::Path path;
+            path.startNewSubPath (bounds.getX() + cut, bounds.getY());
+            path.lineTo (bounds.getRight() - cut, bounds.getY());
+            path.lineTo (bounds.getRight(), bounds.getY() + cut);
+            path.lineTo (bounds.getRight(), bounds.getBottom() - cut);
+            path.lineTo (bounds.getRight() - cut, bounds.getBottom());
+            path.lineTo (bounds.getX() + cut, bounds.getBottom());
+            path.lineTo (bounds.getX(), bounds.getBottom() - cut);
+            path.lineTo (bounds.getX(), bounds.getY() + cut);
+            path.closeSubPath();
+            return path;
+        };
+        const auto swatch = makeSwatch (swatchBounds);
+        constexpr std::array<float, 3> fanAngles { 0.42f, 0.21f, 0.0f };
+        for (size_t index = 0; index < fanAngles.size(); ++index)
+        {
+            const auto transform = juce::AffineTransform::rotation (fanAngles[index], pivot.x, pivot.y);
+            const auto front = index == fanAngles.size() - 1;
+            g.setColour ((front ? uiStyle::utilityRaised : uiStyle::utilitySurface)
+                             .withAlpha (front ? 0.98f : 0.96f));
+            g.fillPath (swatch, transform);
+            g.setColour (accent.withAlpha (front ? (selectorHovered || settingsThemesExpanded ? 0.90f : 0.68f)
+                                                  : 0.46f + static_cast<float> (index) * 0.12f));
+            g.strokePath (swatch, juce::PathStrokeType (front ? 0.88f : 0.72f), transform);
+
+            auto aperture = juce::Point<float> (swatchBounds.getRight() - 2.8f, swatchBounds.getY() + 3.5f)
+                                .transformedBy (transform);
+            const auto apertureBounds = juce::Rectangle<float> (1.85f, 1.85f).withCentre (aperture);
+            g.setColour (uiStyle::utilitySurface.darker (0.72f));
+            g.fillEllipse (apertureBounds);
+            g.setColour (accent.withAlpha (front ? 0.48f : 0.24f));
+            g.drawEllipse (apertureBounds, 0.4f);
+        }
+
+        juce::Path vents;
+        for (int index = 0; index < 3; ++index)
+        {
+            const auto x = swatchBounds.getX() + 5.25f + static_cast<float> (index) * 1.84f;
+            const auto y = swatchBounds.getBottom() - 4.55f + static_cast<float> (index) * 0.26f;
+            vents.startNewSubPath (x, y);
+            vents.lineTo (x + 2.7f, y - 2.7f);
+        }
+        g.setColour (accent.withAlpha (selectorHovered || settingsThemesExpanded ? 0.88f : 0.62f));
+        g.strokePath (vents, juce::PathStrokeType (0.66f, juce::PathStrokeType::curved,
+                                                   juce::PathStrokeType::rounded));
+        const auto pivotRing = juce::Rectangle<float> (5.4f, 5.4f).withCentre (pivot);
+        g.setColour (uiStyle::utilitySurface);
+        g.fillEllipse (pivotRing);
+        g.setColour (accent.withAlpha (selectorHovered || settingsThemesExpanded ? 0.92f : 0.60f));
+        g.drawEllipse (pivotRing, 0.75f);
+        g.setColour (uiStyle::utilityEdge.darker (0.55f));
+        g.fillEllipse (pivotRing.reduced (1.75f));
+
         g.setColour (text.withAlpha (0.90f));
         g.setFont (juce::FontOptions (8.0f).withName ("Bahnschrift").withStyle ("SemiBold"));
-        g.drawText ("FACEPLATE THEMES", juce::Rectangle<float> (folder.getX() + 36.0f, folder.getY() + 4.0f,
-                    folder.getWidth() - 62.0f, 16.0f).toNearestInt(), juce::Justification::centredLeft);
+        g.drawText ("FACEPLATE THEMES", juce::Rectangle<float> (themeSelector.getX() + 43.0f,
+                    themeSelector.getY() + 4.0f, themeSelector.getWidth() - 69.0f, 16.0f).toNearestInt(),
+                    juce::Justification::centredLeft);
         g.setColour (dim.withAlpha (0.78f));
         g.setFont (juce::FontOptions (6.6f).withName ("Bahnschrift"));
         g.drawFittedText (voidworm::ui::themePalette (owner.getThemeIndex()).name,
-                          juce::Rectangle<float> (folder.getX() + 36.0f, folder.getY() + 19.0f,
-                          folder.getWidth() - 62.0f, 14.0f).toNearestInt(), juce::Justification::centredLeft, 1);
+                          juce::Rectangle<float> (themeSelector.getX() + 43.0f, themeSelector.getY() + 19.0f,
+                          themeSelector.getWidth() - 69.0f, 14.0f).toNearestInt(),
+                          juce::Justification::centredLeft, 1);
         juce::Path caret;
         if (settingsThemesExpanded)
-            caret.addTriangle (folder.getRight() - 18.0f, folder.getCentreY() + 3.0f,
-                               folder.getRight() - 8.0f, folder.getCentreY() + 3.0f,
-                               folder.getRight() - 13.0f, folder.getCentreY() - 3.0f);
+            caret.addTriangle (themeSelector.getRight() - 18.0f, themeSelector.getCentreY() + 3.0f,
+                               themeSelector.getRight() - 8.0f, themeSelector.getCentreY() + 3.0f,
+                               themeSelector.getRight() - 13.0f, themeSelector.getCentreY() - 3.0f);
         else
-            caret.addTriangle (folder.getRight() - 16.0f, folder.getCentreY() - 5.0f,
-                               folder.getRight() - 16.0f, folder.getCentreY() + 5.0f,
-                               folder.getRight() - 10.0f, folder.getCentreY());
-        g.setColour (folderHovered ? accent : dim.withAlpha (0.70f));
+            caret.addTriangle (themeSelector.getRight() - 16.0f, themeSelector.getCentreY() - 5.0f,
+                               themeSelector.getRight() - 16.0f, themeSelector.getCentreY() + 5.0f,
+                               themeSelector.getRight() - 10.0f, themeSelector.getCentreY());
+        g.setColour (selectorHovered ? accent : dim.withAlpha (0.70f));
         g.fillPath (caret);
 
         const auto actionsY = controls.getY() + (settingsThemesExpanded ? 329.0f : 181.0f);
@@ -1244,9 +1296,9 @@ void VoidwormAudioProcessorEditor::OverlayPanel::mouseDown (const juce::MouseEve
                 repaint(); return;
             }
         }
-        const auto themeFolder = juce::Rectangle<float> (controls.getX(), controls.getY() + 132.0f,
-                                                          controls.getWidth(), 40.0f);
-        if (themeFolder.contains (point))
+        const auto themeSelector = juce::Rectangle<float> (controls.getX(), controls.getY() + 132.0f,
+                                                            controls.getWidth(), 40.0f);
+        if (themeSelector.contains (point))
         {
             settingsThemesExpanded = ! settingsThemesExpanded;
             if (settingsThemesExpanded)
