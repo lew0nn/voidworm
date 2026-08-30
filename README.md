@@ -7,12 +7,12 @@
 <p align="center"><em>Source-reactive industrial distortion for Windows.</em></p>
 
 <p align="center">
-  <a href="https://github.com/lew0nn/voidworm/releases/tag/v1.0.0"><img alt="Version 1.0.0 — open release" src="https://img.shields.io/badge/version-1.0.0-8A00E6?style=flat-square&amp;labelColor=201726"></a>
-  <a href="#download"><img alt="Windows x64 — downloads" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=flat-square&amp;labelColor=17202A"></a>
-  <a href="#download"><img alt="VST3 and Standalone — downloads" src="https://img.shields.io/badge/formats-VST3%20%7C%20Standalone-FF0051?style=flat-square&amp;labelColor=28171D"></a>
+  <a href="https://github.com/lew0nn/voidworm/releases/tag/v1.0.0"><img alt="Version 1.0.0, open release" src="https://img.shields.io/badge/version-1.0.0-8A00E6?style=flat-square&amp;labelColor=201726"></a>
+  <a href="#download"><img alt="Windows x64 downloads" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=flat-square&amp;labelColor=17202A"></a>
+  <a href="#download"><img alt="VST3 and Standalone downloads" src="https://img.shields.io/badge/formats-VST3%20%7C%20Standalone-FF0051?style=flat-square&amp;labelColor=28171D"></a>
   <a href="https://github.com/juce-framework/JUCE/releases/tag/8.0.8"><img alt="JUCE 8.0.8" src="https://img.shields.io/badge/JUCE-8.0.8-00A8B5?style=flat-square&amp;labelColor=152326"></a>
   <a href="CMakeLists.txt"><img alt="C++17 project definition" src="https://img.shields.io/badge/C%2B%2B-17-F0A030?style=flat-square&amp;labelColor=282116"></a>
-  <a href="LICENSE"><img alt="GNU AGPL v3 license" src="https://img.shields.io/badge/license-AGPL--3.0-7ED321?style=flat-square&amp;labelColor=182519&amp;logo=gnu&amp;logoColor=white"></a>
+  <a href="LICENSE"><img alt="GNU AGPL v3 license" src="https://img.shields.io/badge/license-AGPL%203.0-7ED321?style=flat-square&amp;labelColor=182519&amp;logo=gnu&amp;logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -25,12 +25,10 @@ VOIDWORM follows the incoming signal instead of laying the same static distortio
 
 ## Reactors
 
-| Reactor | Role |
-| --- | --- |
-| MASS | Fundamental weight, low-order harmonics, low-end pressure. |
-| FURNACE | Starvation, grind, fuzz, folding, hostile midrange. |
-| ARC | Source-derived metallic/electrical intermodulation. |
-| FEEDBACK | Short bounded nonlinear recursion and unstable texture. |
+- **MASS:** Fundamental weight, low-order harmonics, low-end pressure.
+- **FURNACE:** Starvation, grind, fuzz, folding, hostile midrange.
+- **ARC:** Source-derived metallic/electrical intermodulation.
+- **FEEDBACK:** Short bounded nonlinear recursion and unstable texture.
 
 <p align="center">
   <img src="./Media/VOIDWORM_Reactor.png" width="100%" alt="VOIDWORM REACTOR workspace">
@@ -56,6 +54,14 @@ Factory and user presets share one browser, matrix, and real-time search system.
 <p align="center">
   <img src="./Media/VOIDWORM_Themes.png" width="92%" alt="VOIDWORM faceplate theme browser">
 </p>
+
+<p align="center"><sub>Twelve faceplates, selected from the dedicated appearance panel.</sub></p>
+
+<p align="center">
+  <img src="./Media/VOIDWORM_Save_Preset.png" width="92%" alt="VOIDWORM Save User Preset dialog">
+</p>
+
+<p align="center"><sub>Name and store custom sounds directly from the preset browser.</sub></p>
 
 </details>
 
@@ -125,9 +131,9 @@ Extract the Standalone package and run `VOIDWORM.exe`. Audio/MIDI configuration 
 
 Requirements: Windows x64, CMake 3.22+, Visual Studio 2022 with the MSVC desktop C++ toolchain, Git, and the pinned JUCE submodule.
 
+Clone the `voidworm` branch together with its pinned submodules. From the repository root, run:
+
 ```powershell
-git clone --recurse-submodules -b voidworm https://github.com/lew0nn/voidworm.git
-cd voidworm
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1
 ```
 
@@ -144,12 +150,14 @@ Built with C++17, JUCE 8.0.8, and CMake.
 
 ## License
 
-Copyright © 2026 lewonn / LWNX DSP.
+<p align="center">
+  <strong><a href="LICENSE">GNU Affero General Public License v3.0</a></strong>
+</p>
 
-Original VOIDWORM source code and original project assets are free and open-source software under the [GNU Affero General Public License v3.0](LICENSE). JUCE and all other third-party components remain under their respective licences; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+<p align="center">VOIDWORM original source code and original project assets are free and open-source software.</p>
 
----
+<p align="center">JUCE and all other third-party components retain their respective licences.<br>See <a href="THIRD_PARTY_NOTICES.md">Third-Party Notices</a>.</p>
+
+<p align="center"><sub>Copyright © 2026 lewonn / LWNX DSP.</sub></p>
 
 <p align="center"><strong>VOIDWORM 1.0.0 · LWNX DSP</strong></p>
-
-<p align="center"><sub>© 2026 lewonn / LWNX DSP. Free and open-source software under GNU AGPL v3 — see LICENSE.</sub></p>
