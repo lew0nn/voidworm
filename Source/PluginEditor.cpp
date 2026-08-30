@@ -371,6 +371,7 @@ VoidwormAudioProcessorEditor::OverlayPanel::OverlayPanel (VoidwormAudioProcessor
     addAndMakeVisible (clearSearchButton);
     presetNameEditor.setMultiLine (false);
     presetNameEditor.setReturnKeyStartsNewLine (false);
+    presetNameEditor.setJustification (juce::Justification::centredLeft);
     presetNameEditor.setInputRestrictions (voidworm::UserPresetStore::maximumNameLength);
     presetNameEditor.addKeyListener (this);
     presetNameEditor.onReturnKey = [this] { performDialogAction(); };
@@ -526,6 +527,7 @@ void VoidwormAudioProcessorEditor::OverlayPanel::resized()
         juce::roundToInt (dialogField.getHeight() * sy)));
     presetNameEditor.setIndents (juce::roundToInt (uiStyle::m * sx), 0);
     presetNameEditor.setFont (juce::FontOptions (uiStyle::searchFont * sy).withName ("Bahnschrift"));
+    presetNameEditor.setJustification (juce::Justification::centredLeft);
 }
 
 void VoidwormAudioProcessorEditor::OverlayPanel::refreshUserPresets()

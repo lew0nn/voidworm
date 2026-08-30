@@ -21,7 +21,7 @@ juce_add_binary_data(VOIDWORM_Assets
 
 juce_add_plugin(VOIDWORM
     COMPANY_NAME "LWNX DSP"
-    BUNDLE_ID "audio.voiddevices.voidworm"
+    BUNDLE_ID "io.github.lew0nn.voidworm"
     PLUGIN_MANUFACTURER_CODE Vdwm
     PLUGIN_CODE VdWm
     FORMATS VST3 Standalone
