@@ -13,6 +13,7 @@
   <a href="https://github.com/juce-framework/JUCE/releases/tag/8.0.8"><img alt="JUCE 8.0.8" src="https://img.shields.io/badge/JUCE-8.0.8-00A8B5?style=flat-square&amp;labelColor=152326"></a>
   <a href="CMakeLists.txt"><img alt="C++17 project definition" src="https://img.shields.io/badge/C%2B%2B-17-F0A030?style=flat-square&amp;labelColor=282116"></a>
   <a href="LICENSE"><img alt="GNU AGPL v3 license" src="https://img.shields.io/badge/license-AGPL%203.0-7ED321?style=flat-square&amp;labelColor=182519&amp;logo=gnu&amp;logoColor=white"></a>
+  <a href="https://github.com/lew0nn/voidworm/releases/latest"><img alt="Download the latest VOIDWORM release" src="https://img.shields.io/badge/downloads-7340D8?style=flat-square&amp;logo=github&amp;logoColor=white"></a>
 </p>
 
 <p align="center">
