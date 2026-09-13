@@ -1122,7 +1122,7 @@ void VoidwormAudioProcessorEditor::OverlayPanel::performDialogAction()
     if (dialog == Dialog::deleteConfirm)
     {
         owner.presetAssociation = PresetAssociation::custom;
-        owner.currentUserPresetFile = {};
+        owner.currentUserPresetFile = juce::File {};
         owner.presetName = "Custom";
         owner.presetIsDirty = true;
     }

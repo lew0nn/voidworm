@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(VOIDWORM VERSION 1.0.0 LANGUAGES CXX)
+project(VOIDWORM VERSION 1.0.0 LANGUAGES C CXX)
 
 option(VOIDWORM_BUILD_PERF_AUDIT "Build the non-shipping CPU performance audit tool" OFF)
 option(VOIDWORM_ENABLE_PERF_STAGE_TIMERS "Enable stage timers for the CPU audit tool" OFF)
