@@ -158,5 +158,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout createVoidwormParameterLayou
         juce::ParameterID { "gateThreshold", 1 }, "GATE THRESHOLD",
         juce::NormalisableRange<float> { -80.0f, -20.0f, 0.1f }, -50.0f,
         juce::AudioParameterFloatAttributes().withLabel ("dB")));
+    layout.add (std::make_unique<juce::AudioParameterBool> (
+        juce::ParameterID { "sawEnabled", 1 }, "SAW ON", false));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "sawAmount", 1 }, "SAW AMOUNT",
+        juce::NormalisableRange<float> { 0.0f, 1.0f, 0.0001f }, 0.25f, amountAttributes));
     return layout;
 }

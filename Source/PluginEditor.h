@@ -222,12 +222,14 @@ private:
     TouchSlider breach, tear, overload, rot, drive, mix, low, mid, high, range, output, gateThreshold;
     TouchSlider weld, limiterThreshold, limiterCeiling;
     TouchSlider reactorAmount, reactorCharacterA, reactorCharacterB;
+    TouchSlider sawAmount;
     AnimatedToggleButton surgeSwitch;
     AnimatedToggleButton limiterSwitch;
     HotspotButton previousPresetButton { "Previous preset" };
     HotspotButton nextPresetButton { "Next preset" };
     HotspotButton presetMenuButton { "Preset menu" };
     HotspotButton gateButton { "Input noise gate" };
+    HotspotButton sawButton { "Saw stage" };
     HotspotButton gridButton { "Preset library" };
     HotspotButton searchButton { "Preset search" };
     HotspotButton settingsButton { "Engine settings" };
@@ -242,6 +244,7 @@ private:
     juce::Label breachLabel, tearLabel, overloadLabel, rotLabel, driveLabel, mixLabel, surgeLabel, gateThresholdLabel;
     juce::Label lowLabel, midLabel, highLabel, rangeLabel, outputLabel;
     juce::Label weldLabel, limiterThresholdLabel, limiterCeilingLabel, limiterSwitchLabel;
+    juce::Label sawAmountLabel;
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
     std::unique_ptr<Attachment> breachAttachment, tearAttachment, overloadAttachment, rotAttachment, driveAttachment,
@@ -253,6 +256,7 @@ private:
     std::unique_ptr<ButtonAttachment> limiterSwitchAttachment;
     std::unique_ptr<Attachment> reactorAmountAttachment, reactorCharacterAAttachment,
                                 reactorCharacterBAttachment;
+    std::unique_ptr<Attachment> sawAmountAttachment;
     int presetIndex = 0;
     juce::String presetName { "Default Init" };
     enum class PresetAssociation { factory, user, custom };

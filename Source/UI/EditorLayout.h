@@ -38,6 +38,16 @@ struct EditorLayout
     juce::Rectangle<float> drive { 460.0f, 197.0f, 30.0f, 28.0f };
     juce::Rectangle<float> mix { 517.0f, 85.0f, 84.0f, 92.0f };
     juce::Rectangle<float> surge { 101.0f, 279.0f, 102.0f, 40.0f };
+
+    // SAW is a post-reactor stage, but its module sits in the primary panel's
+    // free band so it stays visible on both lower-workspace pages. Geometry
+    // mirrors the GATE module exactly: 65x35 chassis, 27-wide glyph button,
+    // 25px knob offset by (36, 9). It clears the BREACH/TEAR value readouts
+    // above (y182..197) and the OVERLOAD knob to its right (from x289).
+    juce::Rectangle<float> sawModule { 156.0f, 199.0f, 65.0f, 35.0f };
+    juce::Rectangle<float> sawButton { 158.0f, 201.0f, 27.0f, 32.0f };
+    juce::Rectangle<float> sawAmount { 192.0f, 208.0f, 25.0f, 23.0f };
+    float sawGlyphCentreY = 220.5f;
     std::array<juce::Rectangle<float>, 5> secondaryKnobs {{
         { 202.0f, 280.0f, 68.0f, 52.0f }, { 285.0f, 280.0f, 68.0f, 52.0f },
         { 368.0f, 280.0f, 68.0f, 52.0f }, { 451.0f, 280.0f, 68.0f, 52.0f },

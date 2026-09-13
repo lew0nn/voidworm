@@ -1522,6 +1522,10 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     gateThreshold.setTooltip ("Input gate threshold - drag vertically");
     gateThresholdLabel.setText ("THR", juce::dontSendNotification);
     configureSlider (mix, "MIX", mixLabel);
+    configureSlider (sawAmount, "SAW", sawAmountLabel);
+    sawAmount.setMouseDragSensitivity (140);
+    sawAmount.setTooltip ("SAW amount - drag vertically");
+    sawAmountLabel.setText ("AMT", juce::dontSendNotification);
     surgeLabel.setText ("SURGE", juce::dontSendNotification);
     surgeLabel.setJustificationType (juce::Justification::centred);
     surgeLabel.setColour (juce::Label::textColourId, defaultWarmWhite);
@@ -1530,8 +1534,9 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     addAndMakeVisible (surgeLabel);
     addAndMakeVisible (surgeSwitch);
 
-    for (auto* button : { &previousPresetButton, &nextPresetButton, &presetMenuButton, &gateButton, &gridButton,
-                          &searchButton, &settingsButton, &minimiseButton, &closeButton, &oversampleButton })
+    for (auto* button : { &previousPresetButton, &nextPresetButton, &presetMenuButton, &gateButton, &sawButton,
+                          &gridButton, &searchButton, &settingsButton, &minimiseButton, &closeButton,
+                          &oversampleButton })
     {
         button->setMouseCursor (juce::MouseCursor::PointingHandCursor);
         addAndMakeVisible (*button);
@@ -1541,6 +1546,8 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     presetMenuButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::presetBrowser); };
     gateButton.onClick = [this] { toggleParameter ("gateEnabled"); };
     gateButton.setTooltip ("Input gate - click to enable/disable");
+    sawButton.onClick = [this] { toggleParameter ("sawEnabled"); };
+    sawButton.setTooltip ("Saw stage - click to enable/disable");
     gridButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::presetMatrix); };
     searchButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::presetSearch); };
     settingsButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::settings); };
@@ -1603,6 +1610,7 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     driveAttachment = std::make_unique<Attachment> (processor.parameters, "drive", drive);
     gateThresholdAttachment = std::make_unique<Attachment> (processor.parameters, "gateThreshold", gateThreshold);
     mixAttachment = std::make_unique<Attachment> (processor.parameters, "mix", mix);
+    sawAmountAttachment = std::make_unique<Attachment> (processor.parameters, "sawAmount", sawAmount);
     surgeAttachment = std::make_unique<ButtonAttachment> (processor.parameters, "surge", surgeSwitch);
     lowAttachment = std::make_unique<Attachment> (processor.parameters, "low", low);
     midAttachment = std::make_unique<Attachment> (processor.parameters, "mid", mid);
@@ -1794,10 +1802,11 @@ void VoidwormAudioProcessorEditor::setTheme (int index)
     lookAndFeel.setThemeStyle (currentThemeStyle());
     const auto text = themeText();
     for (auto* label : { &breachLabel, &tearLabel, &overloadLabel, &rotLabel, &driveLabel, &mixLabel, &surgeLabel,
-                         &gateThresholdLabel,
+                         &gateThresholdLabel, &sawAmountLabel,
                          &lowLabel, &midLabel, &highLabel, &rangeLabel, &outputLabel })
         label->setColour (juce::Label::textColourId, text);
-    for (auto* slider : { &breach, &tear, &overload, &rot, &drive, &mix, &gateThreshold, &low, &mid, &high, &range, &output,
+    for (auto* slider : { &breach, &tear, &overload, &rot, &drive, &mix, &gateThreshold, &sawAmount,
+                          &low, &mid, &high, &range, &output,
                           &reactorAmount, &reactorCharacterA, &reactorCharacterB })
         slider->repaint();
     surgeSwitch.repaint();
@@ -2020,6 +2029,69 @@ void VoidwormAudioProcessorEditor::paint (juce::Graphics& g)
     g.fillEllipse (gateLamp);
     g.setColour (gateMuting ? warmWhite.withAlpha (0.82f) : uiStyle::utilityEdge.withAlpha (0.72f));
     g.drawEllipse (gateLamp, 0.65f);
+
+    // SAW is a post-reactor stage, but a compact module in the primary panel's
+    // free band keeps it reachable on both lower-workspace pages. The chassis
+    // deliberately copies the GATE module so the two read as one family.
+    const auto sawModule = editorLayout.sawModule;
+    g.setColour (juce::Colour (0xff100f0e).withAlpha (0.62f));
+    g.fillRoundedRectangle (sawModule, 3.0f);
+    g.setColour (uiStyle::utilityEdge.withAlpha (0.34f));
+    g.drawRoundedRectangle (sawModule, 3.0f, 0.55f);
+
+    const auto sawEnabled = processor.parameters.getRawParameterValue ("sawEnabled")->load() >= 0.5f;
+    const auto sawSetting = juce::jlimit (0.0f, 1.0f,
+        processor.parameters.getRawParameterValue ("sawAmount")->load());
+    // Lamp heat is a pure UI reading of the two parameters, so the amount knob
+    // stays legible before the stage itself reports anything back.
+    const auto sawHeat = sawEnabled ? sawSetting : 0.0f;
+    const auto sawOver = sawButton.isMouseOver();
+    const auto sawCentreX = editorLayout.sawButton.getCentreX();
+    const auto sawCentreY = editorLayout.sawGlyphCentreY;
+    g.setColour (sawOver ? warmWhite.withAlpha (0.82f) : dimText.withAlpha (0.78f));
+    g.setFont (juce::FontOptions (5.8f).withName ("Bahnschrift").withStyle ("SemiBold"));
+    g.drawText ("SAW", juce::Rectangle<float> (sawModule.getX() + 1.0f, sawModule.getY() + 2.0f,
+                                               29.0f, 8.0f).toNearestInt(),
+                juce::Justification::centred);
+    if (sawOver)
+    {
+        g.setColour (juce::Colours::white.withAlpha (0.025f));
+        g.fillRoundedRectangle (editorLayout.sawButton.reduced (2.0f), 4.0f);
+    }
+    const auto sawColour = sawEnabled ? crimson.interpolatedWith (ember, sawHeat * 0.60f).withAlpha (0.86f)
+                                      : dimText.withAlpha (sawOver ? 0.72f : 0.48f);
+    if (sawHeat > 0.04f)
+    {
+        g.setColour (ember.withAlpha (0.10f * sawHeat));
+        g.fillEllipse (sawCentreX - 8.0f, sawCentreY - 8.0f, 16.0f, 16.0f);
+    }
+    g.setColour (sawColour);
+    constexpr auto sawSpan = 6.5f;
+    constexpr auto sawRise = 4.0f;
+    constexpr auto sawTooth = (sawSpan * 2.0f) / 3.0f;
+    juce::Path sawGlyph;
+    sawGlyph.startNewSubPath (sawCentreX - sawSpan, sawCentreY + sawRise);
+    for (int tooth = 0; tooth < 3; ++tooth)
+    {
+        const auto x = sawCentreX - sawSpan + static_cast<float> (tooth) * sawTooth;
+        sawGlyph.lineTo (x + sawTooth, sawCentreY - sawRise);
+        if (tooth < 2)
+            sawGlyph.lineTo (x + sawTooth, sawCentreY + sawRise);
+    }
+    g.strokePath (sawGlyph, juce::PathStrokeType (1.1f, juce::PathStrokeType::curved,
+                                                  juce::PathStrokeType::rounded));
+    const auto sawLamp = juce::Rectangle<float> (sawCentreX + 7.6f, sawCentreY - 8.4f, 3.6f, 3.6f);
+    if (sawHeat > 0.04f)
+    {
+        g.setColour (ember.withAlpha (0.22f * sawHeat));
+        g.fillEllipse (sawLamp.expanded (2.5f));
+    }
+    g.setColour (sawEnabled ? crimson.interpolatedWith (ember, sawHeat).withAlpha (0.45f + 0.48f * sawHeat)
+                            : juce::Colour (0xff171513));
+    g.fillEllipse (sawLamp);
+    g.setColour (sawEnabled && sawHeat > 0.04f ? warmWhite.withAlpha (0.72f)
+                                               : uiStyle::utilityEdge.withAlpha (0.72f));
+    g.drawEllipse (sawLamp, 0.65f);
 
     drawEqGraph (g, editorLayout.lowerWorkspace);
 
@@ -2499,6 +2571,7 @@ void VoidwormAudioProcessorEditor::drawTransientValue (juce::Graphics& g)
     else if (name == "DRIVE") { centreX = 475.0f; y = 226.0f; }
     else if (name == "GATE THRESHOLD") { centreX = headerGeometry().gateThreshold.getCentreX(); y = 117.0f; }
     else if (name == "MIX") centreX = 559.0f;
+    else if (name == "SAW") centreX = editorLayout.sawAmount.getCentreX();
     else if (name == "LOW") { centreX = 236.0f; y = 328.0f; }
     else if (name == "MID") { centreX = 319.0f; y = 328.0f; }
     else if (name == "HIGH") { centreX = 402.0f; y = 328.0f; }
@@ -2543,6 +2616,7 @@ void VoidwormAudioProcessorEditor::resized()
     rot.setBounds (scaled (editorLayout.rot));
     drive.setBounds (scaled (editorLayout.drive));
     mix.setBounds (scaled (editorLayout.mix));
+    sawAmount.setBounds (scaled (editorLayout.sawAmount));
 
     surgeSwitch.setBounds (scaled (editorLayout.surge));
     low.setBounds (scaled (editorLayout.secondaryKnobs[0]));
@@ -2608,7 +2682,10 @@ void VoidwormAudioProcessorEditor::resized()
     nextPresetButton.setBounds (scaled (header.nextPreset));
     gateButton.setBounds (scaled (header.gate));
     gateThreshold.setBounds (scaled (header.gateThreshold));
+    sawButton.setBounds (scaled (editorLayout.sawButton));
     setLabelAt (gateThresholdLabel, header.gateThreshold.getCentreX(), 83.0f, 29.0f, 7.0f);
+    setLabelAt (sawAmountLabel, editorLayout.sawAmount.getCentreX(),
+                editorLayout.sawModule.getY() + 1.0f, 29.0f, 7.0f);
     gridButton.setBounds (scaled (header.grid));
     searchButton.setBounds (scaled (header.search));
     settingsButton.setBounds (scaled (header.settings));
@@ -2630,6 +2707,7 @@ void VoidwormAudioProcessorEditor::resized()
         label->setFont (juce::FontOptions (8.0f * sy).withName ("Bahnschrift").withStyle ("SemiBold"));
     driveLabel.setFont (juce::FontOptions (7.0f * sy).withName ("Bahnschrift").withStyle ("Regular"));
     gateThresholdLabel.setFont (juce::FontOptions (5.8f * sy).withName ("Bahnschrift").withStyle ("SemiBold"));
+    sawAmountLabel.setFont (juce::FontOptions (5.8f * sy).withName ("Bahnschrift").withStyle ("SemiBold"));
     overloadLabel.setFont (juce::FontOptions (14.0f * sy).withName ("Bahnschrift").withStyle ("Light"));
 }
 
