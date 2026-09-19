@@ -149,7 +149,16 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
     auto& furnaceBuffer = furnaceBuffers[static_cast<size_t> (index)];
     auto& arcBuffer = arcBuffers[static_cast<size_t> (index)];
     auto& feedbackBuffer = feedbackBuffers[static_cast<size_t> (index)];
+    // The engine chunks well below the prepared maximum, so this cannot trip
+    // today. It is a real check rather than an assertion because overrunning
+    // the path buffers in a release build would corrupt memory rather than
+    // fail audibly, and the chunk size is a tuning knob somebody may raise.
     jassert (static_cast<int> (block.getNumSamples()) <= massBuffer.getNumSamples());
+    if (static_cast<int> (block.getNumSamples()) > massBuffer.getNumSamples())
+    {
+        ++faultCounters.nonFiniteRepairCount;
+        return {};
+    }
     {
         VOIDWORM_PROFILE_SCOPE (performance::Stage::pathCopies);
         for (size_t channel = 0; channel < block.getNumChannels(); ++channel)
