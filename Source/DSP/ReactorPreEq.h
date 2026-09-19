@@ -52,6 +52,7 @@ private:
                                    double a0, double a1, double a2) noexcept;
     static float responseMagnitude (const Coefficients&, double sampleRate, float frequency) noexcept;
     static void approach (Coefficients& current, const Coefficients& target, float amount) noexcept;
+    static bool coefficientsHaveSettled (const Coefficients& current, const Coefficients& target) noexcept;
     static bool coefficientsAreFinite (const Coefficients&) noexcept;
     static bool coefficientsAreStable (const Coefficients&) noexcept;
 

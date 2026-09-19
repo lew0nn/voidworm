@@ -148,6 +148,20 @@ ReactorPreEq::Coefficients ReactorPreEq::makeLowPass (double rate, float frequen
                       1.0 + alpha, -2.0 * cosine, 1.0 - alpha);
 }
 
+bool ReactorPreEq::coefficientsHaveSettled (const Coefficients& current,
+                                            const Coefficients& target) noexcept
+{
+    // The exponential approach never lands exactly on the target, so treat a
+    // difference far below float precision as arrived. Coefficients are O(1),
+    // making this roughly a hundred times finer than the audio path resolves.
+    constexpr auto settled = 1.0e-9;
+    return std::abs (current.b0 - target.b0) < settled
+        && std::abs (current.b1 - target.b1) < settled
+        && std::abs (current.b2 - target.b2) < settled
+        && std::abs (current.a1 - target.a1) < settled
+        && std::abs (current.a2 - target.a2) < settled;
+}
+
 void ReactorPreEq::approach (Coefficients& current, const Coefficients& target, float amount) noexcept
 {
     if (! std::isfinite (amount))
@@ -216,11 +230,21 @@ void ReactorPreEq::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettin
         }
     }
 
+    // Deciding this once per block keeps the settled case - which is almost
+    // always - from running four coefficient interpolations on every sample.
+    auto interpolating = false;
+    for (size_t stage = 0; stage < currentCoefficients.size(); ++stage)
+        if (! coefficientsHaveSettled (currentCoefficients[stage], targetCoefficients[stage]))
+            interpolating = true;
+    if (! interpolating)
+        currentCoefficients = targetCoefficients;
+
     const auto channels = juce::jmin (block.getNumChannels(), states.size());
     for (size_t sample = 0; sample < block.getNumSamples(); ++sample)
     {
-        for (size_t stage = 0; stage < currentCoefficients.size(); ++stage)
-            approach (currentCoefficients[stage], targetCoefficients[stage], smoothingCoefficient);
+        if (interpolating)
+            for (size_t stage = 0; stage < currentCoefficients.size(); ++stage)
+                approach (currentCoefficients[stage], targetCoefficients[stage], smoothingCoefficient);
 
         for (size_t channel = 0; channel < channels; ++channel)
         {
