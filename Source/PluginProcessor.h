@@ -78,6 +78,45 @@ public:
     bool commitPresetChange (const voidworm::PresetSnapshot& snapshot) noexcept;
 
 private:
+    // Resolved once so the audio thread never hashes a parameter ID string.
+    struct EqHandles
+    {
+        std::atomic<float>* hp = nullptr;
+        std::atomic<float>* focusFrequency = nullptr;
+        std::atomic<float>* focusGain = nullptr;
+        std::atomic<float>* lp = nullptr;
+        std::atomic<float>* focus2Frequency = nullptr;
+        std::atomic<float>* focus2Gain = nullptr;
+    };
+    struct ParameterHandles
+    {
+        std::atomic<float>* breach = nullptr;
+        std::atomic<float>* tear = nullptr;
+        std::atomic<float>* rot = nullptr;
+        std::atomic<float>* drive = nullptr;
+        std::atomic<float>* overload = nullptr;
+        std::atomic<float>* mix = nullptr;
+        std::atomic<float>* range = nullptr;
+        std::atomic<float>* low = nullptr;
+        std::atomic<float>* mid = nullptr;
+        std::atomic<float>* high = nullptr;
+        std::atomic<float>* output = nullptr;
+        std::atomic<float>* weld = nullptr;
+        std::atomic<float>* limiterEnabled = nullptr;
+        std::atomic<float>* limiterThreshold = nullptr;
+        std::atomic<float>* limiterCeiling = nullptr;
+        std::atomic<float>* gateEnabled = nullptr;
+        std::atomic<float>* gateThreshold = nullptr;
+        std::atomic<float>* surge = nullptr;
+        std::atomic<float>* oversample = nullptr;
+        std::atomic<float>* hqMode = nullptr;
+        std::array<std::atomic<float>*, 4> reactorEnabled {};
+        std::array<std::atomic<float>*, 4> reactorAmounts {};
+        std::array<std::atomic<float>*, 8> character {};
+        std::array<EqHandles, 4> eq {};
+    };
+    void cacheParameterHandles();
+    ParameterHandles handles;
     void resetMeters() noexcept;
     void publishMeterBlock (const juce::AudioBuffer<float>&, bool input) noexcept;
     voidworm::VoidEngine engine;

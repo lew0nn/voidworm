@@ -7,6 +7,64 @@ VoidwormAudioProcessor::VoidwormAudioProcessor()
                                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
       parameters (*this, nullptr, "VOIDWORM_STATE", createParameterLayout())
 {
+    cacheParameterHandles();
+}
+
+void VoidwormAudioProcessor::cacheParameterHandles()
+{
+    const auto resolve = [this] (const char* id)
+    {
+        auto* value = parameters.getRawParameterValue (id);
+        // A missing ID is a layout mistake, not a runtime condition. Fail loudly
+        // in debug rather than handing the audio thread a null to dereference.
+        jassert (value != nullptr);
+        return value;
+    };
+    handles.breach = resolve ("breach");
+    handles.tear = resolve ("tear");
+    handles.rot = resolve ("rot");
+    handles.drive = resolve ("drive");
+    handles.overload = resolve ("overload");
+    handles.mix = resolve ("mix");
+    handles.range = resolve ("range");
+    handles.low = resolve ("low");
+    handles.mid = resolve ("mid");
+    handles.high = resolve ("high");
+    handles.output = resolve ("output");
+    handles.weld = resolve ("weld");
+    handles.limiterEnabled = resolve ("limiterEnabled");
+    handles.limiterThreshold = resolve ("limiterThreshold");
+    handles.limiterCeiling = resolve ("limiterCeiling");
+    handles.gateEnabled = resolve ("gateEnabled");
+    handles.gateThreshold = resolve ("gateThreshold");
+    handles.surge = resolve ("surge");
+    handles.oversample = resolve ("oversample");
+    handles.hqMode = resolve ("hqMode");
+    constexpr std::array<const char*, 4> enabledIds {
+        "massEnabled", "furnaceEnabled", "arcEnabled", "feedbackEnabled" };
+    constexpr std::array<const char*, 4> amountIds {
+        "massAmount", "furnaceAmount", "arcAmount", "feedbackAmount" };
+    constexpr std::array<const char*, 8> characterIds {
+        "massSaturation", "massHarmonics", "furnaceStarve", "furnaceFold",
+        "arcXmod", "arcFold", "feedbackReturn", "feedbackDamp" };
+    for (size_t index = 0; index < enabledIds.size(); ++index)
+    {
+        handles.reactorEnabled[index] = resolve (enabledIds[index]);
+        handles.reactorAmounts[index] = resolve (amountIds[index]);
+    }
+    for (size_t index = 0; index < characterIds.size(); ++index)
+        handles.character[index] = resolve (characterIds[index]);
+    constexpr std::array<const char*, 4> eqPrefixes { "mass", "furnace", "arc", "feedback" };
+    for (size_t index = 0; index < eqPrefixes.size(); ++index)
+    {
+        const juce::String prefix (eqPrefixes[index]);
+        handles.eq[index] = { resolve ((prefix + "Hp").toRawUTF8()),
+                              resolve ((prefix + "FocusFreq").toRawUTF8()),
+                              resolve ((prefix + "FocusGain").toRawUTF8()),
+                              resolve ((prefix + "Lp").toRawUTF8()),
+                              resolve ((prefix + "Focus2Freq").toRawUTF8()),
+                              resolve ((prefix + "Focus2Gain").toRawUTF8()) };
+    }
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout VoidwormAudioProcessor::createParameterLayout()
@@ -77,68 +135,51 @@ bool VoidwormAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 voidworm::Parameters VoidwormAudioProcessor::captureParameterSnapshot() noexcept
 {
     voidworm::Parameters p;
-    p.breach = parameters.getRawParameterValue ("breach")->load();
-    p.tear = parameters.getRawParameterValue ("tear")->load();
-    p.rot = parameters.getRawParameterValue ("rot")->load();
-    p.driveDb = parameters.getRawParameterValue ("drive")->load();
-    p.overload = parameters.getRawParameterValue ("overload")->load();
-    p.mix = parameters.getRawParameterValue ("mix")->load();
-    p.range = parameters.getRawParameterValue ("range")->load();
-    p.lowDb = parameters.getRawParameterValue ("low")->load();
-    p.midDb = parameters.getRawParameterValue ("mid")->load();
-    p.highDb = parameters.getRawParameterValue ("high")->load();
-    p.outputDb = parameters.getRawParameterValue ("output")->load();
-    p.weld = parameters.getRawParameterValue ("weld")->load();
-    p.limiterEnabled = parameters.getRawParameterValue ("limiterEnabled")->load() >= 0.5f;
-    p.limiterThresholdDb = parameters.getRawParameterValue ("limiterThreshold")->load();
-    p.limiterCeilingDb = parameters.getRawParameterValue ("limiterCeiling")->load();
-    p.gateEnabled = parameters.getRawParameterValue ("gateEnabled")->load() >= 0.5f;
-    p.gateThresholdDb = parameters.getRawParameterValue ("gateThreshold")->load();
-    p.surge = parameters.getRawParameterValue ("surge")->load() >= 0.5f;
+    p.breach = handles.breach->load();
+    p.tear = handles.tear->load();
+    p.rot = handles.rot->load();
+    p.driveDb = handles.drive->load();
+    p.overload = handles.overload->load();
+    p.mix = handles.mix->load();
+    p.range = handles.range->load();
+    p.lowDb = handles.low->load();
+    p.midDb = handles.mid->load();
+    p.highDb = handles.high->load();
+    p.outputDb = handles.output->load();
+    p.weld = handles.weld->load();
+    p.limiterEnabled = handles.limiterEnabled->load() >= 0.5f;
+    p.limiterThresholdDb = handles.limiterThreshold->load();
+    p.limiterCeilingDb = handles.limiterCeiling->load();
+    p.gateEnabled = handles.gateEnabled->load() >= 0.5f;
+    p.gateThresholdDb = handles.gateThreshold->load();
+    p.surge = handles.surge->load() >= 0.5f;
     constexpr std::array<int, 4> oversamplingFactors { 1, 2, 4, 8 };
-    const auto oversamplingIndex = juce::jlimit (0, 3,
-        juce::roundToInt (parameters.getRawParameterValue ("oversample")->load()));
+    const auto oversamplingIndex = juce::jlimit (0, 3, juce::roundToInt (handles.oversample->load()));
     p.oversampleFactor = oversamplingFactors[static_cast<size_t> (oversamplingIndex)];
-    p.hqMode = parameters.getRawParameterValue ("hqMode")->load() >= 0.5f;
-    p.reactorEnabled = {
-        parameters.getRawParameterValue ("massEnabled")->load() >= 0.5f,
-        parameters.getRawParameterValue ("furnaceEnabled")->load() >= 0.5f,
-        parameters.getRawParameterValue ("arcEnabled")->load() >= 0.5f,
-        parameters.getRawParameterValue ("feedbackEnabled")->load() >= 0.5f
-    };
-    p.reactorAmounts = {
-        parameters.getRawParameterValue ("massAmount")->load(),
-        parameters.getRawParameterValue ("furnaceAmount")->load(),
-        parameters.getRawParameterValue ("arcAmount")->load(),
-        parameters.getRawParameterValue ("feedbackAmount")->load()
-    };
+    p.hqMode = handles.hqMode->load() >= 0.5f;
+    for (size_t index = 0; index < p.reactorEnabled.size(); ++index)
+    {
+        p.reactorEnabled[index] = handles.reactorEnabled[index]->load() >= 0.5f;
+        p.reactorAmounts[index] = handles.reactorAmounts[index]->load();
+    }
     p.reactorCharacter = {
-        parameters.getRawParameterValue ("massSaturation")->load(),
-        parameters.getRawParameterValue ("massHarmonics")->load(),
-        parameters.getRawParameterValue ("furnaceStarve")->load(),
-        parameters.getRawParameterValue ("furnaceFold")->load(),
-        parameters.getRawParameterValue ("arcXmod")->load(),
-        parameters.getRawParameterValue ("arcFold")->load(),
-        parameters.getRawParameterValue ("feedbackReturn")->load(),
-        parameters.getRawParameterValue ("feedbackDamp")->load()
+        handles.character[0]->load(), handles.character[1]->load(),
+        handles.character[2]->load(), handles.character[3]->load(),
+        handles.character[4]->load(), handles.character[5]->load(),
+        handles.character[6]->load(), handles.character[7]->load()
     };
     p.reactorSolo = getReactorSoloTarget();
-    const auto readEq = [this] (const char* hp, const char* focus, const char* gain, const char* lp,
-                                const char* focus2, const char* gain2)
+    const auto readEq = [] (const EqHandles& eq)
     {
         return voidworm::ReactorEqSettings {
-            parameters.getRawParameterValue (hp)->load(),
-            parameters.getRawParameterValue (focus)->load(),
-            parameters.getRawParameterValue (gain)->load(),
-            parameters.getRawParameterValue (lp)->load(),
-            parameters.getRawParameterValue (focus2)->load(),
-            parameters.getRawParameterValue (gain2)->load()
+            eq.hp->load(), eq.focusFrequency->load(), eq.focusGain->load(),
+            eq.lp->load(), eq.focus2Frequency->load(), eq.focus2Gain->load()
         };
     };
-    p.massEq = readEq ("massHp", "massFocusFreq", "massFocusGain", "massLp", "massFocus2Freq", "massFocus2Gain");
-    p.furnaceEq = readEq ("furnaceHp", "furnaceFocusFreq", "furnaceFocusGain", "furnaceLp", "furnaceFocus2Freq", "furnaceFocus2Gain");
-    p.arcEq = readEq ("arcHp", "arcFocusFreq", "arcFocusGain", "arcLp", "arcFocus2Freq", "arcFocus2Gain");
-    p.feedbackEq = readEq ("feedbackHp", "feedbackFocusFreq", "feedbackFocusGain", "feedbackLp", "feedbackFocus2Freq", "feedbackFocus2Gain");
+    p.massEq = readEq (handles.eq[0]);
+    p.furnaceEq = readEq (handles.eq[1]);
+    p.arcEq = readEq (handles.eq[2]);
+    p.feedbackEq = readEq (handles.eq[3]);
     return p;
 }
 
