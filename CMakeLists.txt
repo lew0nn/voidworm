@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.22)
 
 project(VOIDWORM VERSION 1.0.0 LANGUAGES C CXX)
 
+# JUCE only adds -O3 for an exact Release config, and -O0 for an exact Debug
+# one, so a single-config generator left without a build type gets neither and
+# falls back to the compiler default of no optimisation. RelWithDebInfo lands
+# in the same gap. Default to Release so an unqualified configure is optimised.
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
+endif()
+
 option(VOIDWORM_BUILD_PERF_AUDIT "Build the non-shipping CPU performance audit tool" OFF)
 option(VOIDWORM_ENABLE_PERF_STAGE_TIMERS "Enable stage timers for the CPU audit tool" OFF)
 
