@@ -32,30 +32,26 @@ bool ReactorPreEq::coefficientsAreStable (const Coefficients& c) noexcept
         && 1.0 - c.a2 > margin;
 }
 
-float ReactorPreEq::FilterState::process (float input, const Coefficients& c, bool& fault) noexcept
+namespace
 {
-    const auto safeInput = std::isfinite (input) ? static_cast<double> (input) : 0.0;
-    constexpr auto runawayLimit = 10000.0;
-    if (! std::isfinite (input) || ! std::isfinite (z1) || ! std::isfinite (z2)
-        || std::abs (z1) > runawayLimit || std::abs (z2) > runawayLimit)
-    {
-        reset();
-        fault = true;
-        return static_cast<float> (safeInput);
-    }
+constexpr double filterRunawayLimit = 10000.0;
+}
 
+bool ReactorPreEq::FilterState::isHealthy() const noexcept
+{
+    return std::isfinite (z1) && std::isfinite (z2)
+        && std::abs (z1) <= filterRunawayLimit && std::abs (z2) <= filterRunawayLimit;
+}
+
+float ReactorPreEq::FilterState::process (float input, const Coefficients& c) noexcept
+{
+    // Deliberately branch free. Health is established before the block runs and
+    // re-checked after it, so a fault is contained to one chunk instead of one
+    // sample; the rack's repair pass scrubs whatever that chunk produced.
+    const auto safeInput = static_cast<double> (input);
     const auto output = c.b0 * safeInput + z1;
     const auto nextZ1 = c.b1 * safeInput - c.a1 * output + z2;
     const auto nextZ2 = c.b2 * safeInput - c.a2 * output;
-    if (! std::isfinite (output) || ! std::isfinite (nextZ1) || ! std::isfinite (nextZ2)
-        || std::abs (output) > runawayLimit || std::abs (nextZ1) > runawayLimit
-        || std::abs (nextZ2) > runawayLimit)
-    {
-        reset();
-        fault = true;
-        return static_cast<float> (safeInput);
-    }
-
     z1 = nextZ1;
     z2 = nextZ2;
     return static_cast<float> (output);
@@ -240,6 +236,16 @@ void ReactorPreEq::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettin
         currentCoefficients = targetCoefficients;
 
     const auto channels = juce::jmin (block.getNumChannels(), states.size());
+
+    // Establish health once, so the inner loop carries no branches at all.
+    for (size_t channel = 0; channel < channels; ++channel)
+        for (auto& state : states[channel])
+            if (! state.isHealthy())
+            {
+                state.reset();
+                ++dspFaultCount;
+            }
+
     for (size_t sample = 0; sample < block.getNumSamples(); ++sample)
     {
         if (interpolating)
@@ -250,15 +256,21 @@ void ReactorPreEq::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettin
         {
             auto value = block.getSample (static_cast<int> (channel), static_cast<int> (sample));
             for (size_t stage = 0; stage < currentCoefficients.size(); ++stage)
-            {
-                auto fault = false;
-                value = states[channel][stage].process (value, currentCoefficients[stage], fault);
-                if (fault)
-                    ++dspFaultCount;
-            }
+                value = states[channel][stage].process (value, currentCoefficients[stage]);
             block.setSample (static_cast<int> (channel), static_cast<int> (sample), value);
         }
     }
+
+    // Anything that diverged during the block is caught here and the chunk is
+    // discarded upstream, which bounds a fault to one chunk rather than letting
+    // it persist across blocks.
+    for (size_t channel = 0; channel < channels; ++channel)
+        for (auto& state : states[channel])
+            if (! state.isHealthy())
+            {
+                state.reset();
+                ++dspFaultCount;
+            }
 }
 
 float ReactorPreEq::responseMagnitude (const Coefficients& c, double rate, float frequency) noexcept

@@ -42,7 +42,11 @@ private:
         double z1 = 0.0;
         double z2 = 0.0;
         void reset() noexcept { z1 = z2 = 0.0; }
-        float process (float input, const Coefficients& c, bool& fault) noexcept;
+        // Checked once per block rather than per sample. A biquad whose
+        // coefficients already passed the Jury test cannot reach a runaway
+        // from healthy state and bounded input inside one short chunk.
+        bool isHealthy() const noexcept;
+        float process (float input, const Coefficients& c) noexcept;
     };
 
     static Coefficients makeHighPass (double sampleRate, float frequency) noexcept;
