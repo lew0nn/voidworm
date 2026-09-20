@@ -5,8 +5,8 @@
 #include <windows.h>
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,0,0
-PRODUCTVERSION 1,0,0,0
+FILEVERSION 1,0,1,0
+PRODUCTVERSION 1,0,1,0
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
@@ -14,10 +14,10 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "LWNX DSP\0"
       VALUE "FileDescription", "VOIDWORM\0"
-      VALUE "FileVersion", "1.0.0.0\0"
+      VALUE "FileVersion", "1.0.1.0\0"
       VALUE "LegalCopyright", "© 2026 lewonn / LWNX DSP\0"
       VALUE "ProductName", "VOIDWORM\0"
-      VALUE "ProductVersion", "1.0.0.0\0"
+      VALUE "ProductVersion", "1.0.1.0\0"
     END
   END
   BLOCK "VarFileInfo"

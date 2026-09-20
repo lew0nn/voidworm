@@ -7,7 +7,7 @@
 <p align="center"><em>Source-reactive industrial distortion for Windows.</em></p>
 
 <p align="center">
-  <a href="https://github.com/lew0nn/voidworm/releases/tag/v1.0.0"><img alt="Version 1.0.0, open release" src="https://img.shields.io/badge/version-1.0.0-8A00E6?style=flat-square&amp;labelColor=201726"></a>
+  <a href="https://github.com/lew0nn/voidworm/releases/tag/v1.0.1"><img alt="Version 1.0.1, open release" src="https://img.shields.io/badge/version-1.0.1-8A00E6?style=flat-square&amp;labelColor=201726"></a>
   <a href="#download"><img alt="Windows x64 downloads" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=flat-square&amp;labelColor=17202A"></a>
   <a href="#download"><img alt="VST3 and Standalone downloads" src="https://img.shields.io/badge/formats-VST3%20%7C%20Standalone-FF0051?style=flat-square&amp;labelColor=28171D"></a>
   <a href="https://github.com/juce-framework/JUCE/releases/tag/8.0.8"><img alt="JUCE 8.0.8" src="https://img.shields.io/badge/JUCE-8.0.8-00A8B5?style=flat-square&amp;labelColor=152326"></a>
@@ -68,19 +68,19 @@ Factory and user presets share one browser, matrix, and real-time search system.
 
 ## Download
 
-### [Windows installer](https://github.com/lew0nn/voidworm/releases/download/v1.0.0/VOIDWORM-1.0.0-Windows-x64-Setup.exe)
+### [Windows installer](https://github.com/lew0nn/voidworm/releases/download/v1.0.1/VOIDWORM-1.0.1-Windows-x64-Setup.exe)
 
 Installs the VST3 plug-in, the Standalone application, or both.
 
-### [MSI installer](https://github.com/lew0nn/voidworm/releases/download/v1.0.0/VOIDWORM-1.0.0-Windows-x64.msi)
+### [MSI installer](https://github.com/lew0nn/voidworm/releases/download/v1.0.1/VOIDWORM-1.0.1-Windows-x64.msi)
 
 Installs both the VST3 plug-in and Standalone application through Windows Installer.
 
-### [VST3](https://github.com/lew0nn/voidworm/releases/download/v1.0.0/VOIDWORM-1.0.0-Windows-x64-VST3.zip)
+### [VST3](https://github.com/lew0nn/voidworm/releases/download/v1.0.1/VOIDWORM-1.0.1-Windows-x64-VST3.zip)
 
 The complete `VOIDWORM.vst3` bundle for Windows x64 hosts.
 
-### [Standalone](https://github.com/lew0nn/voidworm/releases/download/v1.0.0/VOIDWORM-1.0.0-Windows-x64-Standalone.zip)
+### [Standalone](https://github.com/lew0nn/voidworm/releases/download/v1.0.1/VOIDWORM-1.0.1-Windows-x64-Standalone.zip)
 
 Runs VOIDWORM without a DAW and includes integrated Audio/MIDI device settings.
 
@@ -188,4 +188,4 @@ Built with C++17, JUCE 8.0.8, and CMake.
 
 <p align="center"><sub>Copyright © 2026 lewonn / LWNX DSP.</sub></p>
 
-<p align="center"><strong>VOIDWORM 1.0.0 · LWNX DSP</strong></p>
+<p align="center"><strong>VOIDWORM 1.0.1 · LWNX DSP</strong></p>

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(VOIDWORM VERSION 1.0.0 LANGUAGES C CXX)
+project(VOIDWORM VERSION 1.0.1 LANGUAGES C CXX)
 
 # JUCE only adds -O3 for an exact Release config, and -O0 for an exact Debug
 # one, so a single-config generator left without a build type gets neither and

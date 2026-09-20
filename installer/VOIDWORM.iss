@@ -1,6 +1,6 @@
 #define MyAppName "VOIDWORM"
-#define MyAppVersion "1.0.0"
-#define MyAppFileVersion "1.0.0.0"
+#define MyAppVersion "1.0.1"
+#define MyAppFileVersion "1.0.1.0"
 #define MyAppPublisher "LWNX DSP"
 #define MyAppCopyright "© 2026 lewonn / LWNX DSP"
 #define MyAppExeName "VOIDWORM.exe"
@@ -23,7 +23,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 OutputDir=..\dist\release
-OutputBaseFilename=VOIDWORM-1.0.0-Windows-x64-Setup
+OutputBaseFilename=VOIDWORM-1.0.1-Windows-x64-Setup
 SetupIconFile=assets\VOIDWORM_Installer_Icon.ico
 UninstallDisplayIcon={app}\VOIDWORM.ico
 Compression=lzma2
@@ -236,7 +236,7 @@ begin
     SidebarWidth - ScaleX(22), ScaleY(16));
   BrandVersion.AutoSize := False;
   BrandVersion.Alignment := taCenter;
-  BrandVersion.Caption := 'Version 1.0.0';
+  BrandVersion.Caption := 'Version 1.0.1';
   BrandVersion.Color := BrandPanel.Color;
   BrandVersion.Font.Name := 'Bahnschrift';
   BrandVersion.Font.Size := 8;
