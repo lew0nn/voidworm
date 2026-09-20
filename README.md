@@ -98,6 +98,32 @@ MIX uses a latency-aligned dry path. Oversampling supports 1X, 2X, 4X, and 8X wi
 </details>
 
 <details>
+<summary><strong>CPU cost</strong></summary>
+
+VOIDWORM runs four parallel nonlinear reactor paths, each with its own pre-EQ, at the
+oversampled rate. That is inherently expensive, and the oversampling factor is by far the
+largest influence on cost.
+
+Measured on one core at 44.1 kHz, stereo, 128-sample blocks, all four reactors active,
+expressed as a share of realtime for a single instance:
+
+| Oversampling | CPU | Approx. instances per core |
+| --- | --- | --- |
+| 1X | ~6% | ~17 |
+| 2X (default) | ~10% | ~10 |
+| 4X | ~17% | ~6 |
+| 8X | ~32% | ~3 |
+
+HQ mode adds roughly 7% on top of the selected factor, so it is rarely the control worth
+turning down first. Stepping the oversampling factor down one notch saves far more.
+
+The default is 2X. Presets deliberately preserve whatever factor you have selected rather
+than overriding it, so raising or lowering it is a global choice that survives preset
+changes.
+
+</details>
+
+<details>
 <summary><strong>Presets, themes & state</strong></summary>
 
 User presets support Save, Load, Overwrite, Rename, Delete, and Search. They are stored as versioned `.voidwormpreset` files under the user's application-data directory.
