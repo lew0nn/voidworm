@@ -54,7 +54,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout createVoidwormParameterLayou
     // deliberately preserve whatever the user has selected.
     layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "oversample", 1 }, "OVERSAMPLING",
                                                               juce::StringArray { "1X", "2X", "4X", "8X" }, 1));
-    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "hqMode", 1 }, "HQ MODE", true));
+    // Off by default: the FIR path costs about five percent more than the IIR
+    // one for a refinement that only matters on the highest factors, and it is
+    // a single click away for anyone who wants it.
+    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "hqMode", 1 }, "HQ MODE", false));
     layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "theme", 1 }, "UI THEME",
                                                               juce::StringArray { "UV STEEL", "HELLFORGE STEEL", "KRYPT CYAN", "XENO ACID",
                                                                   "VOID AMBER", "TOXIC BRASS", "PLASMA BLUE", "NUCLEAR LIME",

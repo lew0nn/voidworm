@@ -107,17 +107,18 @@ largest influence on cost.
 Measured on one core at 44.1 kHz, stereo, 128-sample blocks, all four reactors active,
 expressed as a share of realtime for a single instance:
 
-| Oversampling | CPU | Approx. instances per core |
-| --- | --- | --- |
-| 1X | ~6% | ~17 |
-| 2X (default) | ~10% | ~10 |
-| 4X | ~17% | ~6 |
-| 8X | ~32% | ~3 |
+| Oversampling | CPU (HQ off) | CPU (HQ on) | Approx. instances per core |
+| --- | --- | --- | --- |
+| 1X | ~6% | ~6% | ~17 |
+| 2X (default) | ~10% | ~11% | ~10 |
+| 4X | ~16% | ~17% | ~6 |
+| 8X | ~30% | ~32% | ~3 |
 
-HQ mode adds roughly 7% on top of the selected factor, so it is rarely the control worth
-turning down first. Stepping the oversampling factor down one notch saves far more.
+HQ mode swaps the IIR halfband filters for linear-phase FIR ones. It adds roughly five
+percent and is off by default, so it is rarely the control worth reaching for first.
+Stepping the oversampling factor down one notch saves considerably more.
 
-The default is 2X. Presets deliberately preserve whatever factor you have selected rather
+The defaults are 2X with HQ off. Presets deliberately preserve whatever factor you have selected rather
 than overriding it, so raising or lowering it is a global choice that survives preset
 changes.
 
