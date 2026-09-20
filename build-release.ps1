@@ -24,13 +24,24 @@ if (-not (Test-Path -LiteralPath $juceCmake)) {
     }
 }
 
-& $cmake -S $projectRoot -B "$projectRoot\build" -G 'Visual Studio 17 2022' -A x64
+# MSBuild emits the juceaide custom commands unquoted, so a build tree whose
+# path contains parentheses is split at the first bracket and the generation
+# step dies with "'C:\Foo' is not recognized". Only the build tree is used to
+# invoke juceaide, so the source tree may stay where it is - relocate just the
+# build tree when the project path would poison it.
+$buildRoot = Join-Path $projectRoot 'build'
+if ($projectRoot -match '[()]') {
+    $buildRoot = Join-Path $env:LOCALAPPDATA 'VOIDWORM-build'
+    Write-Host "Project path contains parentheses; building in $buildRoot instead."
+}
+
+& $cmake -S $projectRoot -B $buildRoot -G 'Visual Studio 17 2022' -A x64
 Assert-CommandSucceeded 'CMake configure'
-& $cmake --build "$projectRoot\build" --config Release --target VOIDWORM_Standalone VOIDWORM_VST3 --parallel
+& $cmake --build $buildRoot --config Release --target VOIDWORM_Standalone VOIDWORM_VST3 --parallel
 Assert-CommandSucceeded 'Release build'
 
-$vstSource = "$projectRoot\build\VOIDWORM_artefacts\Release\VST3\VOIDWORM.vst3"
-$standaloneSource = "$projectRoot\build\VOIDWORM_artefacts\Release\Standalone\VOIDWORM.exe"
+$vstSource = "$buildRoot\VOIDWORM_artefacts\Release\VST3\VOIDWORM.vst3"
+$standaloneSource = "$buildRoot\VOIDWORM_artefacts\Release\Standalone\VOIDWORM.exe"
 $dist = "$projectRoot\dist"
 
 if (-not (Test-Path -LiteralPath $vstSource) -or -not (Test-Path -LiteralPath $standaloneSource)) {
