@@ -49,8 +49,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout createVoidwormParameterLayou
     layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "output", 1 }, "OUTPUT",
         juce::NormalisableRange<float> { -24.0f, 6.0f, 0.01f }, -4.0f, juce::AudioParameterFloatAttributes().withLabel ("dB")));
     layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "surge", 1 }, "SURGE", false));
+    // 2X by default: 4X costs roughly 3x the CPU of 1X for a refinement most
+    // sources do not need, and the factor is reachable in one click. Presets
+    // deliberately preserve whatever the user has selected.
     layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "oversample", 1 }, "OVERSAMPLING",
-                                                              juce::StringArray { "1X", "2X", "4X", "8X" }, 2));
+                                                              juce::StringArray { "1X", "2X", "4X", "8X" }, 1));
     layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "hqMode", 1 }, "HQ MODE", true));
     layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "theme", 1 }, "UI THEME",
                                                               juce::StringArray { "UV STEEL", "HELLFORGE STEEL", "KRYPT CYAN", "XENO ACID",

@@ -34,7 +34,7 @@ struct Parameters
     bool gateEnabled = true;
     float gateThresholdDb = -50.0f;
     bool surge = false;
-    int oversampleFactor = 4;
+    int oversampleFactor = 2;
     bool hqMode = true;
     std::array<bool, 4> reactorEnabled { true, true, true, true };
     std::array<float, 4> reactorAmounts { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -137,7 +137,7 @@ private:
 
     double sampleRate = 44100.0;
     int channelCount = 2;
-    int oversampleFactor = 4;
+    int oversampleFactor = 2;
     bool hqMode = true;
     bool limiterEnabled = true;
     std::array<bool, 4> reactorEnabled { true, true, true, true };
