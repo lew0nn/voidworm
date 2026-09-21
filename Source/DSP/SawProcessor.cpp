@@ -4,9 +4,30 @@ namespace voidworm
 {
 namespace
 {
-constexpr int harmonicCount = 6;
-constexpr float harmonicTaper = 0.78f;
 constexpr float phaseBias = 0.38f;
+
+// SAW keeps the original restrained character. The two added shapes are
+// deliberately far more aggressive: more partials and a slower taper leave
+// real energy in the upper harmonics, and a harder drive pushes the transfer
+// further per sample. Everything still runs at four times the host rate with
+// the residual low-passed, so the extra harmonics stay bounded.
+struct ShapeCharacter
+{
+    int harmonics;
+    float taper;
+    float drive;
+};
+
+constexpr ShapeCharacter shapeCharacter (SawProcessor::Waveform waveform) noexcept
+{
+    switch (waveform)
+    {
+        case SawProcessor::Waveform::square:   return { 14, 0.93f, 7.4f };
+        case SawProcessor::Waveform::triangle: return { 14, 0.90f, 9.0f };
+        case SawProcessor::Waveform::saw:
+        default:                               return {  6, 0.78f, 4.1f };
+    }
+}
 }
 
 void SawProcessor::prepare (double sampleRate, int maximumBlockSize, int channels)
@@ -69,14 +90,15 @@ float SawProcessor::shape (float phase, Waveform waveform) noexcept
     // time-domain oscillator. The taper keeps the slope finite so there is no
     // hard wrap discontinuity to alias, and each waveform is simply a different
     // weighting of the same partials.
+    const auto character = shapeCharacter (waveform);
     const auto sine = std::sin (phase);
     const auto cosine = std::cos (phase);
     auto previous = 0.0f;
     auto current = sine;
-    auto taper = harmonicTaper;
+    auto taper = character.taper;
     auto sum = 0.0f;
 
-    for (int harmonic = 1; harmonic <= harmonicCount; ++harmonic)
+    for (int harmonic = 1; harmonic <= character.harmonics; ++harmonic)
     {
         const auto odd = (harmonic % 2) != 0;
         switch (waveform)
@@ -100,7 +122,7 @@ float SawProcessor::shape (float phase, Waveform waveform) noexcept
         const auto next = 2.0f * cosine * current - previous;
         previous = current;
         current = next;
-        taper *= harmonicTaper;
+        taper *= character.taper;
     }
 
     switch (waveform)
@@ -158,6 +180,7 @@ void SawProcessor::process (juce::AudioBuffer<float>& buffer) noexcept
     // A fresh enable starts the filters from silence underneath the 35 ms fade.
     residualActive = true;
 
+    const auto drive = shapeCharacter (selectedWaveform).drive;
     const juce::AudioBuffer<float>& inputBuffer = buffer;
     auto up = oversampling->processSamplesUp (juce::dsp::AudioBlock<const float> (inputBuffer));
     for (size_t sample = 0; sample < up.getNumSamples(); ++sample)
@@ -173,7 +196,7 @@ void SawProcessor::process (juce::AudioBuffer<float>& buffer) noexcept
             const auto index = static_cast<size_t> (channel);
             const auto input = up.getSample (channel, static_cast<int> (sample));
             const auto normalised = input / scale;
-            const auto phase = 4.1f * std::tanh (normalised) + phaseBias;
+            const auto phase = drive * std::tanh (normalised) + phaseBias;
             const auto excursion = 0.70f * (shape (phase, selectedWaveform) - zeroOffset);
             // Saturating the sum is what couples the shape to the source.
             // Subtracting the unexcited response isolates the added texture.
