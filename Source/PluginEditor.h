@@ -160,6 +160,7 @@ private:
     void applySoundSnapshot (voidworm::Parameters, const juce::String&, bool factory,
                              const juce::File& userFile = {});
     void toggleParameter (const char* parameterID);
+    void cycleSawWaveform();
     void cycleOversampling();
     void setTheme (int index);
     void configureUiPreferences();

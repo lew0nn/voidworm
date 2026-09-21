@@ -23,6 +23,7 @@ void VoidEngine::prepare (double newSampleRate, int maximumBlockSize, int channe
     reactorRack.prepare (sampleRate, maximumBlockSize, channelCount);
     tearProcessor.prepare (sampleRate, channelCount);
     weldProcessor.prepare (sampleRate);
+    sawProcessor.prepare (sampleRate, maximumBlockSize, channelCount);
     finalLimiter.prepare (sampleRate, maximumBlockSize, channelCount);
     dryWetMixer = std::make_unique<juce::dsp::DryWetMixer<float>> (oversampling.getFixedLatencySamples());
     dryWetMixer->setMixingRule (juce::dsp::DryWetMixingRule::sin3dB);
@@ -51,6 +52,7 @@ void VoidEngine::reset() noexcept
     reactorRack.reset();
     tearProcessor.reset();
     weldProcessor.reset();
+    sawProcessor.reset();
     finalLimiter.reset();
     if (dryWetMixer != nullptr)
         dryWetMixer->reset();
@@ -82,6 +84,7 @@ void VoidEngine::reset() noexcept
 
 void VoidEngine::resetForPresetChange() noexcept
 {
+    sawProcessor.reset();
     reactorRack.resetForPresetChange();
     tearProcessor.resetForPresetChange();
     weldProcessor.reset();
@@ -92,6 +95,7 @@ void VoidEngine::resetForPresetChange() noexcept
 
 void VoidEngine::quenchClosedGateState() noexcept
 {
+    sawProcessor.reset();
     sourceAnalyzer.reset();
     reactorRack.resetForPresetChange();
     tearProcessor.quench();
@@ -171,6 +175,9 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
     const auto limiterCeiling = finiteClamped (p.limiterCeilingDb, -6.0f, 0.0f, -0.8f);
     const auto gateThreshold = finiteClamped (p.gateThresholdDb, -80.0f, -20.0f, -50.0f);
     const auto surge = p.surge ? 1.0f : 0.0f;
+    sawProcessor.setParameters (p.sawEnabled, p.sawAmount,
+                                static_cast<SawProcessor::Waveform> (juce::jlimit (0, 2, p.sawWaveform)),
+                                ! targetsInitialised);
     if (! targetsInitialised)
     {
         breachSmooth.setCurrentAndTargetValue (breach);
@@ -490,6 +497,12 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
 #if VOIDWORM_ENABLE_DIAGNOSTICS
     observeBuffer (diagnostics.afterMix, buffer);
 #endif
+    // Final creative stage: after the reactor blend, before master tone, output
+    // gain and limiting. Its latency is constant and reported to the host.
+    sawProcessor.process (buffer);
+    if (repairNonFiniteBuffer (buffer) != 0)
+        sawProcessor.reset();
+
     {
         VOIDWORM_PROFILE_SCOPE (performance::Stage::masterEqAndOutput);
         outputTone.update (rangeSmooth.skip (samples), lowSmooth.skip (samples),

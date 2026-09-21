@@ -70,6 +70,8 @@ target_sources(VOIDWORM PRIVATE
     Source/DSP/Dynamics.h
     Source/DSP/WeldProcessor.cpp
     Source/DSP/WeldProcessor.h
+    Source/DSP/SawProcessor.cpp
+    Source/DSP/SawProcessor.h
     Source/DSP/FinalLimiter.cpp
     Source/DSP/FinalLimiter.h
     Source/DSP/InputNoiseGate.cpp

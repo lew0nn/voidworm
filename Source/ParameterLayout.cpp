@@ -163,5 +163,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createVoidwormParameterLayou
     layout.add (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { "sawAmount", 1 }, "SAW AMOUNT",
         juce::NormalisableRange<float> { 0.0f, 1.0f, 0.0001f }, 0.25f, amountAttributes));
+    layout.add (std::make_unique<juce::AudioParameterChoice> (
+        juce::ParameterID { "sawWave", 1 }, "SAW WAVE",
+        juce::StringArray { "SAW", "SQUARE", "TRIANGLE" }, 0));
     return layout;
 }

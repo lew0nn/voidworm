@@ -11,6 +11,7 @@
 #include "SourceAnalyzer.h"
 #include "TearProcessor.h"
 #include "WeldProcessor.h"
+#include "SawProcessor.h"
 
 namespace voidworm
 {
@@ -44,6 +45,9 @@ struct Parameters
     ReactorEqSettings furnaceEq = furnaceEqDefaults();
     ReactorEqSettings arcEq = arcEqDefaults();
     ReactorEqSettings feedbackEq = feedbackEqDefaults();
+    bool sawEnabled = false;
+    float sawAmount = 0.25f;
+    int sawWaveform = 0;
 };
 
 #if VOIDWORM_ENABLE_DIAGNOSTICS
@@ -83,7 +87,8 @@ public:
 #endif
     int getLatencySamples() const noexcept
     {
-        return oversampling.getFixedLatencySamples() + finalLimiter.getLatencySamples();
+        return oversampling.getFixedLatencySamples() + sawProcessor.getLatencySamples()
+             + finalLimiter.getLatencySamples();
     }
 
     float getTearActivity() const noexcept { return tearActivity.load(); }
@@ -116,6 +121,7 @@ private:
     ReactorRack reactorRack;
     TearProcessor tearProcessor;
     WeldProcessor weldProcessor;
+    SawProcessor sawProcessor;
     FinalLimiter finalLimiter;
     std::unique_ptr<juce::dsp::DryWetMixer<float>> dryWetMixer;
 

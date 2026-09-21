@@ -40,6 +40,9 @@ void VoidwormAudioProcessor::cacheParameterHandles()
     handles.surge = resolve ("surge");
     handles.oversample = resolve ("oversample");
     handles.hqMode = resolve ("hqMode");
+    handles.sawEnabled = resolve ("sawEnabled");
+    handles.sawAmount = resolve ("sawAmount");
+    handles.sawWave = resolve ("sawWave");
     constexpr std::array<const char*, 4> enabledIds {
         "massEnabled", "furnaceEnabled", "arcEnabled", "feedbackEnabled" };
     constexpr std::array<const char*, 4> amountIds {
@@ -157,6 +160,9 @@ voidworm::Parameters VoidwormAudioProcessor::captureParameterSnapshot() noexcept
     const auto oversamplingIndex = juce::jlimit (0, 3, juce::roundToInt (handles.oversample->load()));
     p.oversampleFactor = oversamplingFactors[static_cast<size_t> (oversamplingIndex)];
     p.hqMode = handles.hqMode->load() >= 0.5f;
+    p.sawEnabled = handles.sawEnabled->load() >= 0.5f;
+    p.sawAmount = handles.sawAmount->load();
+    p.sawWaveform = juce::jlimit (0, 2, juce::roundToInt (handles.sawWave->load()));
     for (size_t index = 0; index < p.reactorEnabled.size(); ++index)
     {
         p.reactorEnabled[index] = handles.reactorEnabled[index]->load() >= 0.5f;

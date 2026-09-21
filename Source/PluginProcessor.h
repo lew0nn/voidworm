@@ -110,6 +110,9 @@ private:
         std::atomic<float>* surge = nullptr;
         std::atomic<float>* oversample = nullptr;
         std::atomic<float>* hqMode = nullptr;
+        std::atomic<float>* sawEnabled = nullptr;
+        std::atomic<float>* sawAmount = nullptr;
+        std::atomic<float>* sawWave = nullptr;
         std::array<std::atomic<float>*, 4> reactorEnabled {};
         std::array<std::atomic<float>*, 4> reactorAmounts {};
         std::array<std::atomic<float>*, 8> character {};

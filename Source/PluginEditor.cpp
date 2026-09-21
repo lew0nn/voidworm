@@ -1547,7 +1547,8 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     gateButton.onClick = [this] { toggleParameter ("gateEnabled"); };
     gateButton.setTooltip ("Input gate - click to enable/disable");
     sawButton.onClick = [this] { toggleParameter ("sawEnabled"); };
-    sawButton.setTooltip ("Saw stage - click to enable/disable");
+    sawButton.onContextClick = [this] { cycleSawWaveform(); };
+    sawButton.setTooltip ("Saw stage - click to enable/disable, right-click for waveform");
     gridButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::presetMatrix); };
     searchButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::presetSearch); };
     settingsButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::settings); };
@@ -2050,8 +2051,12 @@ void VoidwormAudioProcessorEditor::paint (juce::Graphics& g)
     const auto sawCentreY = editorLayout.sawGlyphCentreY;
     g.setColour (sawOver ? warmWhite.withAlpha (0.82f) : dimText.withAlpha (0.78f));
     g.setFont (juce::FontOptions (5.8f).withName ("Bahnschrift").withStyle ("SemiBold"));
-    g.drawText ("SAW", juce::Rectangle<float> (sawModule.getX() + 1.0f, sawModule.getY() + 2.0f,
-                                               29.0f, 8.0f).toNearestInt(),
+    const auto sawWave = juce::jlimit (0, 2,
+        juce::roundToInt (processor.parameters.getRawParameterValue ("sawWave")->load()));
+    const std::array<const char*, 3> sawWaveNames { "SAW", "SQR", "TRI" };
+    g.drawText (sawWaveNames[static_cast<size_t> (sawWave)],
+                juce::Rectangle<float> (sawModule.getX() + 1.0f, sawModule.getY() + 2.0f,
+                                        29.0f, 8.0f).toNearestInt(),
                 juce::Justification::centred);
     if (sawOver)
     {
@@ -2070,13 +2075,40 @@ void VoidwormAudioProcessorEditor::paint (juce::Graphics& g)
     constexpr auto sawRise = 4.0f;
     constexpr auto sawTooth = (sawSpan * 2.0f) / 3.0f;
     juce::Path sawGlyph;
-    sawGlyph.startNewSubPath (sawCentreX - sawSpan, sawCentreY + sawRise);
-    for (int tooth = 0; tooth < 3; ++tooth)
+    if (sawWave == 1)
     {
-        const auto x = sawCentreX - sawSpan + static_cast<float> (tooth) * sawTooth;
-        sawGlyph.lineTo (x + sawTooth, sawCentreY - sawRise);
-        if (tooth < 2)
-            sawGlyph.lineTo (x + sawTooth, sawCentreY + sawRise);
+        // Square: alternating levels with vertical transitions.
+        const auto step = (sawSpan * 2.0f) / 4.0f;
+        sawGlyph.startNewSubPath (sawCentreX - sawSpan, sawCentreY + sawRise);
+        for (int edge = 0; edge < 4; ++edge)
+        {
+            const auto x = sawCentreX - sawSpan + static_cast<float> (edge) * step;
+            const auto level = edge % 2 == 0 ? sawCentreY - sawRise : sawCentreY + sawRise;
+            sawGlyph.lineTo (x, level);
+            sawGlyph.lineTo (x + step, level);
+        }
+    }
+    else if (sawWave == 2)
+    {
+        // Triangle: symmetric rise and fall, no vertical edges.
+        const auto step = (sawSpan * 2.0f) / 4.0f;
+        sawGlyph.startNewSubPath (sawCentreX - sawSpan, sawCentreY + sawRise);
+        for (int edge = 0; edge < 4; ++edge)
+        {
+            const auto x = sawCentreX - sawSpan + static_cast<float> (edge) * step;
+            sawGlyph.lineTo (x + step, edge % 2 == 0 ? sawCentreY - sawRise : sawCentreY + sawRise);
+        }
+    }
+    else
+    {
+        sawGlyph.startNewSubPath (sawCentreX - sawSpan, sawCentreY + sawRise);
+        for (int tooth = 0; tooth < 3; ++tooth)
+        {
+            const auto x = sawCentreX - sawSpan + static_cast<float> (tooth) * sawTooth;
+            sawGlyph.lineTo (x + sawTooth, sawCentreY - sawRise);
+            if (tooth < 2)
+                sawGlyph.lineTo (x + sawTooth, sawCentreY + sawRise);
+        }
     }
     g.strokePath (sawGlyph, juce::PathStrokeType (1.1f, juce::PathStrokeType::curved,
                                                   juce::PathStrokeType::rounded));
@@ -2717,6 +2749,19 @@ void VoidwormAudioProcessorEditor::toggleParameter (const char* parameterID)
     {
         parameter->beginChangeGesture();
         parameter->setValueNotifyingHost (parameter->getValue() >= 0.5f ? 0.0f : 1.0f);
+        parameter->endChangeGesture();
+        repaint();
+    }
+}
+
+void VoidwormAudioProcessorEditor::cycleSawWaveform()
+{
+    if (auto* parameter = processor.parameters.getParameter ("sawWave"))
+    {
+        const auto next = (juce::jlimit (0, 2, juce::roundToInt (
+            processor.parameters.getRawParameterValue ("sawWave")->load())) + 1) % 3;
+        parameter->beginChangeGesture();
+        parameter->setValueNotifyingHost (parameter->convertTo0to1 (static_cast<float> (next)));
         parameter->endChangeGesture();
         repaint();
     }
