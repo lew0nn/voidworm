@@ -43,6 +43,16 @@ private:
     public:
         explicit HotspotButton (const juce::String& name) : juce::Button (name) {}
         std::function<void()> onContextClick;
+        // Scrolling over a compact module is the discoverable way to step a
+        // setting that has no room for its own control.
+        std::function<void (int)> onScroll;
+        void mouseWheelMove (const juce::MouseEvent& event,
+                             const juce::MouseWheelDetails& wheel) override
+        {
+            if (onScroll == nullptr) { juce::Button::mouseWheelMove (event, wheel); return; }
+            if (std::abs (wheel.deltaY) < 0.0001f) return;
+            onScroll (wheel.deltaY > 0.0f ? 1 : -1);
+        }
         void paintButton (juce::Graphics&, bool, bool) override {}
         void mouseEnter (const juce::MouseEvent& event) override
         { juce::Button::mouseEnter (event); if (auto* parent = getParentComponent()) parent->repaint(); }
@@ -160,7 +170,7 @@ private:
     void applySoundSnapshot (voidworm::Parameters, const juce::String&, bool factory,
                              const juce::File& userFile = {});
     void toggleParameter (const char* parameterID);
-    void cycleSawWaveform();
+    void cycleSawWaveform (int direction = 1);
     void cycleOversampling();
     void setTheme (int index);
     void configureUiPreferences();

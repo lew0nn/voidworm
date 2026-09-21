@@ -1548,7 +1548,8 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     gateButton.setTooltip ("Input gate - click to enable/disable");
     sawButton.onClick = [this] { toggleParameter ("sawEnabled"); };
     sawButton.onContextClick = [this] { cycleSawWaveform(); };
-    sawButton.setTooltip ("Saw stage - click to enable/disable, right-click for waveform");
+    sawButton.onScroll = [this] (int direction) { cycleSawWaveform (direction); };
+    sawButton.setTooltip ("Saw stage - click to enable/disable, scroll or right-click to change waveform");
     gridButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::presetMatrix); };
     searchButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::presetSearch); };
     settingsButton.onClick = [this] { overlay.showMode (voidworm::ui::HeaderPanel::settings); };
@@ -2754,12 +2755,13 @@ void VoidwormAudioProcessorEditor::toggleParameter (const char* parameterID)
     }
 }
 
-void VoidwormAudioProcessorEditor::cycleSawWaveform()
+void VoidwormAudioProcessorEditor::cycleSawWaveform (int direction)
 {
     if (auto* parameter = processor.parameters.getParameter ("sawWave"))
     {
-        const auto next = (juce::jlimit (0, 2, juce::roundToInt (
-            processor.parameters.getRawParameterValue ("sawWave")->load())) + 1) % 3;
+        const auto current = juce::jlimit (0, 2, juce::roundToInt (
+            processor.parameters.getRawParameterValue ("sawWave")->load()));
+        const auto next = (current + (direction >= 0 ? 1 : 2)) % 3;
         parameter->beginChangeGesture();
         parameter->setValueNotifyingHost (parameter->convertTo0to1 (static_cast<float> (next)));
         parameter->endChangeGesture();
