@@ -19,6 +19,7 @@ float envelopeCoefficient (double sampleRate, float timeMs) noexcept
 
 void FurnaceChain::prepare (double sampleRate) noexcept
 {
+    clipTable();                    // built here, never on the audio thread
     const auto safeRate = juce::jmax (1.0, sampleRate);
     // 720/3.3k are circuit-character stages. The cleanup ceiling is deliberately
     // broader so the exposed FURNACE pre-EQ retains authority above the old 7.8k limit.
@@ -95,6 +96,21 @@ double FurnaceChain::asymmetricClipIntegral (double input) noexcept
     return std::log (q) / (2.0 * c) - k / (2.0 * c) * inverse;
 }
 
+// asymmetricClip in double, as the table's slopes: the exact derivative of
+// asymmetricClipIntegral.
+double FurnaceChain::asymmetricClipExact (double input) noexcept
+{
+    const auto magnitude = std::abs (input);
+    const auto knee = input >= 0.0 ? 0.44 : 0.76;
+    return input / (1.0 + knee * magnitude + 0.08 * magnitude * magnitude);
+}
+
+const AntiderivativeTable& FurnaceChain::clipTable()
+{
+    static const AntiderivativeTable table (&asymmetricClipIntegral, &asymmetricClipExact);
+    return table;
+}
+
 /* asymmetricClip averaged over the step from the previous sample,
    (F(x) - F(x')) / (x - x'), instead of sampled. Driven by up to 12x, the
    first clip was this reactor's main source of aliasing (a bright tone left
@@ -105,9 +121,11 @@ double FurnaceChain::asymmetricClipIntegral (double input) noexcept
    the clip at their midpoint, where the quotient loses precision. */
 float FurnaceChain::antialiasedClip (float input, double& previous, double& previousIntegral) noexcept
 {
-    const auto integral = asymmetricClipIntegral (input);
+    // Steps shorter than the table's spacing take the clip at their midpoint,
+    // which for so short a step differs from the average by under -90 dB.
+    const auto integral = clipTable().evaluate (input);
     const auto step = static_cast<double> (input) - previous;
-    const auto output = std::abs (step) > 1.0e-5
+    const auto output = std::abs (step) > AntiderivativeTable::step
         ? static_cast<float> ((integral - previousIntegral) / step)
         : asymmetricClip (0.5f * (input + static_cast<float> (previous)));
     previous = input;
@@ -117,9 +135,7 @@ float FurnaceChain::antialiasedClip (float input, double& previous, double& prev
 
 float FurnaceChain::reflectFold (float input) noexcept
 {
-    auto wrapped = std::fmod (input + 1.0f, 4.0f);
-    if (wrapped < 0.0f)
-        wrapped += 4.0f;
+    const auto wrapped = fastmath::wrap4 (input + 1.0f);
     return wrapped <= 2.0f ? wrapped - 1.0f : 3.0f - wrapped;
 }
 
@@ -188,8 +204,11 @@ void FurnaceChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettin
             const auto detailed = starved + 0.42f * (starved - state.intermediateLow);
             const auto fuzzed = antialiasedClip (detailed * (1.15f + 2.1f * rot) - 0.045f * state.sagEnvelope,
                                                  state.fuzzPrevious, state.fuzzPreviousIntegral);
-            const auto folded = reflectFold (fuzzed * (1.0f + 2.4f * foldBlend));
-            const auto nonlinear = juce::jmap (foldBlend, fuzzed, folded);
+            // The fold is blended in only above ROT 0.52; below, it was computed
+            // per sample and multiplied by zero.
+            const auto nonlinear = foldBlend > 0.0f
+                ? juce::jmap (foldBlend, fuzzed, reflectFold (fuzzed * (1.0f + 2.4f * foldBlend)))
+                : fuzzed;
             state.cleanup += cleanupCoefficient * (nonlinear - state.cleanup);
             const auto dcBlocked = state.cleanup - state.dcInput + 0.997f * state.dcOutput;
             state.dcInput = state.cleanup;

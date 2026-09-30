@@ -10,6 +10,19 @@ namespace voidworm::fastmath
    from the exponent bits alone. MSVC compiles std::isfinite on a float to a
    library call (measured 2.5 ns against 0.75 ns for this), and the DSP asks
    it per sample, per filter stage, in every validity check. */
+/* x modulo 4, in [0, 4), for the reactors' triangle folds. std::fmod is a
+   library call under MSVC and ran per sample; truncation gives the same
+   value to within rounding for any input the folds see (they are bounded
+   well inside the int range). */
+inline float wrap4 (float x) noexcept
+{
+    const auto scaled = x * 0.25f;
+    auto whole = static_cast<float> (static_cast<int> (scaled));
+    if (whole > scaled)
+        whole -= 1.0f;
+    return x - 4.0f * whole;
+}
+
 inline bool isFinite (float x) noexcept
 {
     std::uint32_t bits;

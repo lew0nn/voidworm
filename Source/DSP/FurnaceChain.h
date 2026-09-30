@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "AntiderivativeTable.h"
 #include "Dynamics.h"
 #include "ReactorPreEq.h"
 #include "ReactorCharacter.h"
@@ -45,6 +46,8 @@ private:
     static float asymmetricClip (float input) noexcept;
     static float reflectFold (float input) noexcept;
     static double asymmetricClipIntegral (double input) noexcept;
+    static double asymmetricClipExact (double input) noexcept;
+    static const AntiderivativeTable& clipTable();
     static float antialiasedClip (float input, double& previous, double& previousIntegral) noexcept;
     std::array<State, 2> states {};
     Dynamics compressor;

@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "SampleAlignment.h"
+#include "AntiderivativeTable.h"
 #include "Dynamics.h"
 #include "ReactorPreEq.h"
 #include "ReactorCharacter.h"
@@ -39,6 +40,8 @@ private:
     static float asymmetric (float input) noexcept;
     static float reflectFold (float input) noexcept;
     static double asymmetricIntegral (double input) noexcept;
+    static double asymmetricExact (double input) noexcept;
+    static const AntiderivativeTable& clipTable();
     static float reflectFoldIntegral (float input) noexcept;
     std::array<State, 2> states {};
     Dynamics compressor;

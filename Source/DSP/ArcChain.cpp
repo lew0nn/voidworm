@@ -13,6 +13,7 @@ float onePoleCoefficient (double sampleRate, float frequency) noexcept
 
 void ArcChain::prepare (double sampleRate) noexcept
 {
+    clipTable();                    // built here, never on the audio thread
     const auto safeRate = juce::jmax (1.0, sampleRate);
     // 210/2.85k define ARC's collision bands. Cleanup remains internal but is
     // broadened so the user pre-EQ can excite useful upper-spectrum interaction.
@@ -65,11 +66,22 @@ double ArcChain::asymmetricIntegral (double input) noexcept
    period 4, so its integral is periodic and bounded (between -1/2 and 1/2)
    however hard the fold is driven, which keeps the difference quotient in
    process well conditioned. */
+// asymmetric in double, as the table's slopes: the exact derivative of
+// asymmetricIntegral.
+double ArcChain::asymmetricExact (double input) noexcept
+{
+    return input / (1.0 + (input >= 0.0 ? 0.38 : 0.69) * std::abs (input));
+}
+
+const AntiderivativeTable& ArcChain::clipTable()
+{
+    static const AntiderivativeTable table (&asymmetricIntegral, &asymmetricExact);
+    return table;
+}
+
 float ArcChain::reflectFoldIntegral (float input) noexcept
 {
-    auto wrapped = std::fmod (input + 1.0f, 4.0f);
-    if (wrapped < 0.0f)
-        wrapped += 4.0f;
+    const auto wrapped = fastmath::wrap4 (input + 1.0f);
     if (wrapped <= 2.0f)
         return 0.5f * (wrapped - 1.0f) * (wrapped - 1.0f) - 0.5f;
     return 0.5f - 0.5f * (3.0f - wrapped) * (3.0f - wrapped);
@@ -77,9 +89,7 @@ float ArcChain::reflectFoldIntegral (float input) noexcept
 
 float ArcChain::reflectFold (float input) noexcept
 {
-    auto wrapped = std::fmod (input + 1.0f, 4.0f);
-    if (wrapped < 0.0f)
-        wrapped += 4.0f;
+    const auto wrapped = fastmath::wrap4 (input + 1.0f);
     return wrapped <= 2.0f ? wrapped - 1.0f : 3.0f - wrapped;
 }
 
@@ -130,9 +140,9 @@ void ArcChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettings e
                reactor's main source of aliasing (a bright tone left
                inharmonic content 16 dB under it at 2x). Near-equal samples
                take the clip at their midpoint. */
-            const auto clipIntegral = asymmetricIntegral (biased);
+            const auto clipIntegral = clipTable().evaluate (biased);
             const auto clipStep = static_cast<double> (biased) - state.clipPrevious;
-            const auto clipped = std::abs (clipStep) > 1.0e-5
+            const auto clipped = std::abs (clipStep) > AntiderivativeTable::step
                 ? static_cast<float> ((clipIntegral - state.clipPreviousIntegral) / clipStep)
                 : asymmetric (0.5f * (biased + static_cast<float> (state.clipPrevious)));
             state.clipPrevious = biased;

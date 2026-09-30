@@ -80,6 +80,7 @@ target_sources(VOIDWORM PRIVATE
     Source/DSP/NonlinearStage.h
     Source/DSP/ArcChain.cpp
     Source/DSP/ArcChain.h
+    Source/DSP/AntiderivativeTable.h
     Source/DSP/FeedbackChain.cpp
     Source/DSP/FeedbackChain.h
     Source/DSP/TearProcessor.cpp
