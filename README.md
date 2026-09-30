@@ -31,6 +31,8 @@ VOIDWORM follows the incoming signal instead of laying the same static distortio
 - **ARC:** Source-derived metallic/electrical intermodulation.
 - **FEEDBACK:** Short bounded nonlinear recursion and unstable texture.
 
+**SAW** is a final creative stage after the reactor blend. It bends the signal through a saw, square, or triangle transfer shaped by the source's own level, adding a hard harmonic edge that follows the playing. One click switches it on, right-click or scroll changes the shape, and AMT sets how much.
+
 <p align="center">
   <img src="./Media/VOIDWORM_Reactor.png" width="100%" alt="VOIDWORM REACTOR workspace">
 </p>
@@ -91,7 +93,7 @@ Runs VOIDWORM without a DAW and includes integrated Audio/MIDI device settings, 
 
 The input gate is stereo-linked, enabled by default, and positioned before dry capture, DRIVE, source analysis, and the reactor engine. BREACH cross-contaminates reactor paths; TEAR introduces post-reactor micro-fragment damage; ROT and OVERLOAD control nonlinear severity; SURGE escalates the engine dynamically.
 
-Each reactor has independent amount, on/off, Solo, high-pass and low-pass boundaries, two focus bands, and path-specific character controls. WELD is the artistic nonlinear stage after recombination. LOW, MID, HIGH, RANGE, and OUTPUT shape the master signal before the dedicated final limiter.
+Each reactor has independent amount, on/off, Solo, high-pass and low-pass boundaries, two focus bands, and path-specific character controls. WELD is the artistic nonlinear stage after recombination. SAW follows the dry/wet mix and runs at about 400 kHz internally whatever the oversampling factor, so its shapes stay clean; its latency is constant and reported whether it is on or off. LOW, MID, HIGH, RANGE, and OUTPUT shape the master signal before the dedicated final limiter.
 
 MIX uses a latency-aligned dry path. Oversampling supports 1X, 2X, 4X, and 8X with a separate HQ processing mode.
 
@@ -118,6 +120,9 @@ HQ mode swaps the IIR halfband filters for linear-phase FIR ones. It adds up to 
 fifth and is off by default, so it is rarely the control worth reaching for first.
 Stepping the oversampling factor down one notch saves considerably more.
 
+SAW, when switched on, adds about 7.5 points of a core at any factor: it runs its own oversampling
+at about 400 kHz. Switched off it costs nothing.
+
 The defaults are 1X with HQ off: the clips and folds are anti-aliased in themselves, so 1X is
 already cleaner than older versions were at 2X. Sessions keep the factor they were saved with.
 Presets deliberately preserve whatever factor you have selected rather than overriding it, so
@@ -128,7 +133,7 @@ raising or lowering it is a global choice that survives preset changes.
 <details>
 <summary><strong>Presets, themes & state</strong></summary>
 
-User presets support Save, Load, Overwrite, Rename, Delete, and Search. They are stored as versioned `.voidwormpreset` files under the user's application-data directory.
+User presets support Save, Load, Overwrite, Rename, Delete, and Search. They are stored as versioned `.voidwormpreset` files under the user's application-data directory, and include SAW; presets saved before 1.2.0 load with SAW off. Factory presets switch SAW off.
 
 The twelve faceplates are UV STEEL, HELLFORGE STEEL, KRYPT CYAN, XENO ACID, VOID AMBER, TOXIC BRASS, PLASMA BLUE, NUCLEAR LIME, BLOOD COPPER, ASHEN GOLD, GLACIER TEAL, and RUPTURE RED. UV STEEL is the default.
 
