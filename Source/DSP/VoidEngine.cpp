@@ -20,13 +20,17 @@ void VoidEngine::prepare (double newSampleRate, int maximumBlockSize, int channe
     inputNoiseGate.prepare (sampleRate);
     sourceAnalyzer.prepare (sampleRate);
     oversampling.prepare (channelCount, maximumBlockSize);
+    dryOversampling.prepare (channelCount, maximumBlockSize);
+    dryScratch.setSize (channelCount, juce::jmax (1, maximumBlockSize));
     reactorRack.prepare (sampleRate, maximumBlockSize, channelCount);
     tearProcessor.prepare (sampleRate, channelCount);
     weldProcessor.prepare (sampleRate);
     finalLimiter.prepare (sampleRate, maximumBlockSize, channelCount);
-    dryWetMixer = std::make_unique<juce::dsp::DryWetMixer<float>> (oversampling.getFixedLatencySamples());
+    // The dry path now carries the wet path's delay itself (see processChunk),
+    // so the mixer adds none.
+    dryWetMixer = std::make_unique<juce::dsp::DryWetMixer<float>> (0);
     dryWetMixer->setMixingRule (juce::dsp::DryWetMixingRule::sin3dB);
-    dryWetMixer->setWetLatency (static_cast<float> (oversampling.getFixedLatencySamples()));
+    dryWetMixer->setWetLatency (0.0f);
     dryWetMixer->prepare ({ sampleRate, static_cast<juce::uint32> (maximumBlockSize),
                             static_cast<juce::uint32> (channelCount) });
     for (auto* value : { &breachSmooth, &tearSmooth, &rotSmooth, &driveSmooth, &overloadSmooth, &mixSmooth, &rangeSmooth,
@@ -48,6 +52,7 @@ void VoidEngine::reset() noexcept
     inputNoiseGate.reset();
     sourceAnalyzer.reset();
     oversampling.reset();
+    dryOversampling.reset();
     reactorRack.reset();
     tearProcessor.reset();
     weldProcessor.reset();
@@ -362,8 +367,25 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
         gateWasFullyClosed = gateFullyClosed;
     }
 
-    const juce::dsp::AudioBlock<const float> dryBlock (buffer);
-    dryWetMixer->pushDrySamples (dryBlock);
+    /* Dry through the same oversampling filters as the wet, up and straight
+       back down, then the same fixed delay. Delay alone matched the wet path
+       only at low frequencies: the default IIR filters shift phase more and
+       more towards the top, and at 50% mix the two cancelled -- a 6.9 dB dip
+       around 14 kHz, with the paths 145 degrees apart there. Sharing the
+       filters gives both paths one phase response. */
+    {
+        VOIDWORM_PROFILE_SCOPE (performance::Stage::fixedLatencyAndMix);
+        juce::AudioBuffer<float> dry (dryScratch.getArrayOfWritePointers(), channels, samples);
+        for (int channel = 0; channel < channels; ++channel)
+            dry.copyFrom (channel, 0, buffer, channel, 0, samples);
+        dryOversampling.select (oversampleFactor, hqMode);
+        const auto& constDry = dry;
+        dryOversampling.processSamplesUp (juce::dsp::AudioBlock<const float> (constDry));
+        juce::dsp::AudioBlock<float> dryDown (dry);
+        dryOversampling.processSamplesDown (dryDown);
+        dryOversampling.applyFixedLatency (dry);
+        dryWetMixer->pushDrySamples (juce::dsp::AudioBlock<const float> (constDry));
+    }
 
     {
         VOIDWORM_PROFILE_SCOPE (performance::Stage::driveAndAnalyzer);

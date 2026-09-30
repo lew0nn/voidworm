@@ -114,6 +114,10 @@ private:
     InputNoiseGate inputNoiseGate;
     SourceAnalyzer sourceAnalyzer;
     OversamplingSystem oversampling;
+    // The dry signal's own trip through the same filters, unprocessed, so it
+    // reaches the mix with the wet path's phase and not just its delay.
+    OversamplingSystem dryOversampling;
+    juce::AudioBuffer<float> dryScratch;
     ReactorRack reactorRack;
     TearProcessor tearProcessor;
     WeldProcessor weldProcessor;
