@@ -6,12 +6,21 @@ namespace voidworm
 namespace
 {
 constexpr float phaseBias = 0.38f;
+/* AMOUNT reaches the residual through a square root and a gain of two. On a
+   straight line, the default quarter was a quarter of the effect, twelve dB
+   down on an effect that was already quiet; a square root makes a quarter
+   half of it. Measured on the arp at the default amount, the saw shape now
+   changes the output by -11.4 dB instead of -26.7, while the output level
+   stays within a decibel. */
+constexpr float residualGain = 2.0f;
 
-// SAW keeps the original restrained character. The two added shapes are
-// deliberately far more aggressive: more partials and a slower taper leave
-// real energy in the upper harmonics, and a harder drive pushes the transfer
-// further per sample. It all runs oversampled with the residual low-passed, so
-// the extra harmonics stay bounded.
+// SAW keeps the smoother, fewer-partial character; the two added shapes are
+// more aggressive: more partials and a slower taper leave real energy in the
+// upper harmonics. All three are driven equally hard now -- SAW at 4.1 was
+// the restrained one, and at its default amount it changed the output by
+// -26.7 dB on the site's arp, which is at the edge of hearing. It all runs
+// oversampled with the residual low-passed, so the extra harmonics stay
+// bounded.
 struct ShapeCharacter
 {
     int harmonics;
@@ -26,7 +35,7 @@ constexpr ShapeCharacter shapeCharacter (SawProcessor::Waveform waveform) noexce
         case SawProcessor::Waveform::square:   return { 14, 0.93f, 7.4f };
         case SawProcessor::Waveform::triangle: return { 14, 0.90f, 9.0f };
         case SawProcessor::Waveform::saw:
-        default:                               return {  6, 0.78f, 4.1f };
+        default:                               return {  6, 0.78f, 7.4f };
     }
 }
 }
@@ -254,7 +263,7 @@ void SawProcessor::process (juce::AudioBuffer<float>& buffer) noexcept
     oversampling->processSamplesDown (down);
     for (int sample = 0; sample < samples; ++sample)
     {
-        const auto amount = amountSmooth.getNextValue();
+        const auto amount = residualGain * std::sqrt (amountSmooth.getNextValue());
         for (int channel = 0; channel < channels; ++channel)
         {
             const auto reference = delayedDry.getSample (channel, sample);
