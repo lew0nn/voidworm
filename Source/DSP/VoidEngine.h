@@ -106,6 +106,7 @@ private:
     void processChunk (juce::AudioBuffer<float>& buffer) noexcept;
 
     static constexpr int sourceAnalysisChunkSize = 32;
+    static constexpr double maximumInternalRate = 400000.0;
 
     enum class PresetTransitionState { normal, fadeOut, commitPending, fadeIn };
 

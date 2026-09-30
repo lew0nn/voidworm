@@ -210,6 +210,13 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
         surgeTarget = surge;
     }
     oversampleFactor = p.oversampleFactor >= 8 ? 8 : p.oversampleFactor >= 4 ? 4 : p.oversampleFactor >= 2 ? 2 : 1;
+    // The factor buys headroom above the audio band, and a session already
+    // running at 88.2 or 96 kHz has twice the headroom to begin with: 8x there
+    // processed at 768 kHz and cost about 90% of a core for nothing audible.
+    // Cap the internal rate at what 8x gives at 48 kHz, so every host rate
+    // lands on the same ~350-400 kHz the reactors are tuned at.
+    while (oversampleFactor > 1 && sampleRate * oversampleFactor > maximumInternalRate)
+        oversampleFactor /= 2;
     hqMode = p.hqMode;
     limiterEnabled = p.limiterEnabled;
     inputNoiseGate.setParameters (p.gateEnabled, gateThreshold);
