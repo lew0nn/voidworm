@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(VOIDWORM VERSION 1.0.1 LANGUAGES C CXX)
+project(VOIDWORM VERSION 1.1.1 LANGUAGES C CXX)
 
 # JUCE only adds -O3 for an exact Release config, and -O0 for an exact Debug
 # one, so a single-config generator left without a build type gets neither and
@@ -102,6 +102,16 @@ target_compile_definitions(VOIDWORM PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0)
+
+# ASIO for the Standalone's device list. JUCE needs three headers from
+# Steinberg's ASIO SDK, vendored under its GPLv3 option -- see
+# THIRD_PARTY_NOTICES.md. A host supplies its own audio devices, so the VST3
+# never opens one; the definition reaches it only because both formats share
+# the compiled JUCE modules.
+if (WIN32)
+    target_compile_definitions(VOIDWORM PUBLIC JUCE_ASIO=1)
+    target_include_directories(VOIDWORM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/vendor/asiosdk")
+endif()
 
 if (VOIDWORM_BUILD_PERF_AUDIT AND VOIDWORM_ENABLE_PERF_STAGE_TIMERS)
     target_compile_definitions(VOIDWORM PRIVATE VOIDWORM_ENABLE_PERF_PROFILING=1)
