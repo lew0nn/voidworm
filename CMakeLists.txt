@@ -60,6 +60,7 @@ target_sources(VOIDWORM PRIVATE
     Source/DSP/MassChain.h
     Source/DSP/FurnaceChain.cpp
     Source/DSP/FurnaceChain.h
+    Source/DSP/SampleAlignment.h
     Source/DSP/ReactorRack.cpp
     Source/DSP/ReactorRack.h
     Source/DSP/ReactorCharacter.h
@@ -68,6 +69,7 @@ target_sources(VOIDWORM PRIVATE
     Source/DSP/ReactorPreEq.h
     Source/DSP/Dynamics.cpp
     Source/DSP/Dynamics.h
+    Source/DSP/FastMath.h
     Source/DSP/WeldProcessor.cpp
     Source/DSP/WeldProcessor.h
     Source/DSP/SawProcessor.cpp
@@ -80,6 +82,7 @@ target_sources(VOIDWORM PRIVATE
     Source/DSP/NonlinearStage.h
     Source/DSP/ArcChain.cpp
     Source/DSP/ArcChain.h
+    Source/DSP/AntiderivativeTable.h
     Source/DSP/FeedbackChain.cpp
     Source/DSP/FeedbackChain.h
     Source/DSP/TearProcessor.cpp

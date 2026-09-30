@@ -26,6 +26,8 @@ private:
     double sampleRate = 44100.0;
     float threshold = 0.25f;
     float ratio = 4.0f;
+    float log2Threshold = -2.0f;   // log2 (threshold)
+    float slope = 0.75f;           // 1 - 1/ratio
     float attackCoefficient = 0.0f;
     float releaseCoefficient = 0.0f;
     float lastThresholdDb = 0.0f;

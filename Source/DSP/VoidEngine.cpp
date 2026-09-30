@@ -1,4 +1,5 @@
 #include "VoidEngine.h"
+#include "FastMath.h"
 #include "PerformanceProfile.h"
 
 namespace voidworm
@@ -7,7 +8,7 @@ namespace
 {
 float finiteClamped (float value, float low, float high, float fallback) noexcept
 {
-    return std::isfinite (value) ? juce::jlimit (low, high, value) : fallback;
+    return fastmath::isFinite (value) ? juce::jlimit (low, high, value) : fallback;
 }
 }
 
@@ -20,14 +21,18 @@ void VoidEngine::prepare (double newSampleRate, int maximumBlockSize, int channe
     inputNoiseGate.prepare (sampleRate);
     sourceAnalyzer.prepare (sampleRate);
     oversampling.prepare (channelCount, maximumBlockSize);
+    dryOversampling.prepare (channelCount, maximumBlockSize);
+    dryScratch.setSize (channelCount, juce::jmax (1, maximumBlockSize));
     reactorRack.prepare (sampleRate, maximumBlockSize, channelCount);
     tearProcessor.prepare (sampleRate, channelCount);
     weldProcessor.prepare (sampleRate);
     sawProcessor.prepare (sampleRate, maximumBlockSize, channelCount);
     finalLimiter.prepare (sampleRate, maximumBlockSize, channelCount);
-    dryWetMixer = std::make_unique<juce::dsp::DryWetMixer<float>> (oversampling.getFixedLatencySamples());
+    // The dry path now carries the wet path's delay itself (see processChunk),
+    // so the mixer adds none.
+    dryWetMixer = std::make_unique<juce::dsp::DryWetMixer<float>> (0);
     dryWetMixer->setMixingRule (juce::dsp::DryWetMixingRule::sin3dB);
-    dryWetMixer->setWetLatency (static_cast<float> (oversampling.getFixedLatencySamples()));
+    dryWetMixer->setWetLatency (0.0f);
     dryWetMixer->prepare ({ sampleRate, static_cast<juce::uint32> (maximumBlockSize),
                             static_cast<juce::uint32> (channelCount) });
     for (auto* value : { &breachSmooth, &tearSmooth, &rotSmooth, &driveSmooth, &overloadSmooth, &mixSmooth, &rangeSmooth,
@@ -49,6 +54,8 @@ void VoidEngine::reset() noexcept
     inputNoiseGate.reset();
     sourceAnalyzer.reset();
     oversampling.reset();
+    dryOversampling.reset();
+    for (auto& delay : dryAlignment) delay.reset();
     reactorRack.reset();
     tearProcessor.reset();
     weldProcessor.reset();
@@ -217,12 +224,19 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
         surgeTarget = surge;
     }
     oversampleFactor = p.oversampleFactor >= 8 ? 8 : p.oversampleFactor >= 4 ? 4 : p.oversampleFactor >= 2 ? 2 : 1;
+    // The factor buys headroom above the audio band, and a session already
+    // running at 88.2 or 96 kHz has twice the headroom to begin with: 8x there
+    // processed at 768 kHz and cost about 90% of a core for nothing audible.
+    // Cap the internal rate at what 8x gives at 48 kHz, so every host rate
+    // lands on the same ~350-400 kHz the reactors are tuned at.
+    while (oversampleFactor > 1 && sampleRate * oversampleFactor > maximumInternalRate)
+        oversampleFactor /= 2;
     hqMode = p.hqMode;
     limiterEnabled = p.limiterEnabled;
     inputNoiseGate.setParameters (p.gateEnabled, gateThreshold);
     reactorEnabled = p.reactorEnabled;
     for (size_t index = 0; index < reactorAmounts.size(); ++index)
-        reactorAmounts[index] = std::isfinite (p.reactorAmounts[index])
+        reactorAmounts[index] = fastmath::isFinite (p.reactorAmounts[index])
             ? juce::jlimit (0.0f, 1.0f, p.reactorAmounts[index]) : 1.0f;
     reactorCharacter = character::sanitise (p.reactorCharacter);
     reactorSolo = juce::jlimit (0, 4, p.reactorSolo);
@@ -265,7 +279,7 @@ uint32_t VoidEngine::repairNonFiniteBuffer (juce::AudioBuffer<float>& buffer) no
     uint32_t repaired = 0;
     for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
-            if (! std::isfinite (buffer.getSample (channel, sample)))
+            if (! fastmath::isFinite (buffer.getSample (channel, sample)))
             {
                 buffer.setSample (channel, sample, 0.0f);
                 ++repaired;
@@ -283,7 +297,7 @@ ReactorActivity VoidEngine::getReactorActivity() const noexcept
 
 float VoidEngine::emergencyLimit (float sample) noexcept
 {
-    if (! std::isfinite (sample))
+    if (! fastmath::isFinite (sample))
     {
         recordNonFiniteRepairs();
         return 0.0f;
@@ -362,8 +376,34 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
         gateWasFullyClosed = gateFullyClosed;
     }
 
-    const juce::dsp::AudioBlock<const float> dryBlock (buffer);
-    dryWetMixer->pushDrySamples (dryBlock);
+    /* Dry through the same oversampling filters as the wet, up and straight
+       back down, then the same fixed delay. Delay alone matched the wet path
+       only at low frequencies: the default IIR filters shift phase more and
+       more towards the top, and at 50% mix the two cancelled -- a 6.9 dB dip
+       around 14 kHz, with the paths 145 degrees apart there. Sharing the
+       filters gives both paths one phase response. */
+    {
+        VOIDWORM_PROFILE_SCOPE (performance::Stage::fixedLatencyAndMix);
+        juce::AudioBuffer<float> dry (dryScratch.getArrayOfWritePointers(), channels, samples);
+        for (int channel = 0; channel < channels; ++channel)
+            dry.copyFrom (channel, 0, buffer, channel, 0, samples);
+        dryOversampling.select (oversampleFactor, hqMode);
+        const auto& constDry = dry;
+        auto dryUp = dryOversampling.processSamplesUp (juce::dsp::AudioBlock<const float> (constDry));
+        // And the sample the anti-aliased reactors take (SampleAlignment.h), at
+        // the same oversampled rate they run at.
+        for (size_t channel = 0; channel < dryUp.getNumChannels(); ++channel)
+        {
+            auto& delay = dryAlignment[juce::jmin (channel, dryAlignment.size() - 1)];
+            auto* up = dryUp.getChannelPointer (channel);
+            for (size_t sample = 0; sample < dryUp.getNumSamples(); ++sample)
+                up[sample] = delay.process (up[sample]);
+        }
+        juce::dsp::AudioBlock<float> dryDown (dry);
+        dryOversampling.processSamplesDown (dryDown);
+        dryOversampling.applyFixedLatency (dry);
+        dryWetMixer->pushDrySamples (juce::dsp::AudioBlock<const float> (constDry));
+    }
 
     {
         VOIDWORM_PROFILE_SCOPE (performance::Stage::driveAndAnalyzer);
@@ -372,14 +412,14 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
             const auto drive = driveSmooth.getNextValue();
             const auto inputLeft = buffer.getSample (0, sampleIndex);
             const auto inputRight = channels > 1 ? buffer.getSample (1, sampleIndex) : inputLeft;
-            const auto drivenLeft = std::isfinite (inputLeft) ? inputLeft * drive : 0.0f;
-            const auto drivenRight = std::isfinite (inputRight) ? inputRight * drive : 0.0f;
+            const auto drivenLeft = fastmath::isFinite (inputLeft) ? inputLeft * drive : 0.0f;
+            const auto drivenRight = fastmath::isFinite (inputRight) ? inputRight * drive : 0.0f;
 #if VOIDWORM_ENABLE_DIAGNOSTICS
             diagnostics.afterDrive.observe (drivenLeft, 0);
             if (channels > 1)
                 diagnostics.afterDrive.observe (drivenRight, 1);
 #endif
-            if (! std::isfinite (inputLeft) || ! std::isfinite (inputRight))
+            if (! fastmath::isFinite (inputLeft) || ! fastmath::isFinite (inputRight))
                 recordNonFiniteRepairs();
             sourceAnalyzer.processSampleState (drivenLeft, drivenRight);
             buffer.setSample (0, sampleIndex, drivenLeft);
@@ -474,7 +514,7 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
         VOIDWORM_PROFILE_SCOPE (performance::Stage::weldDynamics);
         weldReduction = weldProcessor.process (buffer, currentWeld);
     }
-    weldGainReductionDb.store (std::isfinite (weldReduction) ? weldReduction : 0.0f,
+    weldGainReductionDb.store (fastmath::isFinite (weldReduction) ? weldReduction : 0.0f,
                                std::memory_order_relaxed);
 #if VOIDWORM_ENABLE_DIAGNOSTICS
     observeBuffer (diagnostics.afterWeld, buffer);
@@ -531,7 +571,7 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
         limiterReduction = finalLimiter.process (buffer, limiterEnabled,
                                                  limiterThresholdSmooth, limiterCeilingSmooth);
     }
-    limiterGainReductionDb.store (std::isfinite (limiterReduction) ? limiterReduction : 0.0f,
+    limiterGainReductionDb.store (fastmath::isFinite (limiterReduction) ? limiterReduction : 0.0f,
                                   std::memory_order_relaxed);
 #if VOIDWORM_ENABLE_DIAGNOSTICS
     observeBuffer (diagnostics.afterLimiter, buffer);
@@ -554,7 +594,7 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
                 const auto output = safeLimited * containmentGain;
 #if VOIDWORM_ENABLE_DIAGNOSTICS
                 diagnostics.finalOutput.observe (output, channel);
-                if (std::isfinite (limited) && safeLimited != limited)
+                if (fastmath::isFinite (limited) && safeLimited != limited)
                     ++diagnostics.finalOutput.clippedCount;
 #endif
                 buffer.setSample (channel, sampleIndex, output);

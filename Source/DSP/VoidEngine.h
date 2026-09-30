@@ -5,6 +5,7 @@
 #include "FinalLimiter.h"
 #include "InputNoiseGate.h"
 #include "OversamplingSystem.h"
+#include "SampleAlignment.h"
 #include "ReactorRack.h"
 #include "ReactorCharacter.h"
 #include "RealtimeDiagnostics.h"
@@ -111,6 +112,7 @@ private:
     void processChunk (juce::AudioBuffer<float>& buffer) noexcept;
 
     static constexpr int sourceAnalysisChunkSize = 32;
+    static constexpr double maximumInternalRate = 400000.0;
 
     enum class PresetTransitionState { normal, fadeOut, commitPending, fadeIn };
 
@@ -118,6 +120,11 @@ private:
     InputNoiseGate inputNoiseGate;
     SourceAnalyzer sourceAnalyzer;
     OversamplingSystem oversampling;
+    // The dry signal's own trip through the same filters, unprocessed, so it
+    // reaches the mix with the wet path's phase and not just its delay.
+    OversamplingSystem dryOversampling;
+    StereoSampleDelay dryAlignment;
+    juce::AudioBuffer<float> dryScratch;
     ReactorRack reactorRack;
     TearProcessor tearProcessor;
     WeldProcessor weldProcessor;

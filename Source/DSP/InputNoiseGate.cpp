@@ -1,4 +1,5 @@
 #include "InputNoiseGate.h"
+#include "FastMath.h"
 
 #include <cmath>
 
@@ -40,7 +41,7 @@ void InputNoiseGate::setParameters (bool shouldBeEnabled, float thresholdDb) noe
     enabled = shouldBeEnabled;
     if (! enabled)
         muting.store (false, std::memory_order_relaxed);
-    const auto safeThreshold = std::isfinite (thresholdDb)
+    const auto safeThreshold = fastmath::isFinite (thresholdDb)
         ? juce::jlimit (-80.0f, -20.0f, thresholdDb) : -50.0f;
     targetThresholdDb = safeThreshold;
     thresholdDbSmooth.setTargetValue (targetThresholdDb);
@@ -65,17 +66,17 @@ void InputNoiseGate::process (juce::AudioBuffer<float>& buffer) noexcept
         for (int channel = 0; channel < channels; ++channel)
         {
             const auto sample = buffer.getSample (channel, sampleIndex);
-            linkedLevel = juce::jmax (linkedLevel, std::isfinite (sample) ? std::abs (sample) : 0.0f);
+            linkedLevel = juce::jmax (linkedLevel, fastmath::isFinite (sample) ? std::abs (sample) : 0.0f);
         }
 
         const auto detectorCoefficient = linkedLevel > detectorEnvelope
             ? detectorAttackCoefficient : detectorReleaseCoefficient;
         detectorEnvelope = linkedLevel + detectorCoefficient * (detectorEnvelope - linkedLevel);
-        if (! std::isfinite (detectorEnvelope) || detectorEnvelope < 1.0e-12f)
+        if (! fastmath::isFinite (detectorEnvelope) || detectorEnvelope < 1.0e-12f)
             detectorEnvelope = 0.0f;
 
         auto currentThresholdDb = thresholdDbSmooth.getNextValue();
-        if (! std::isfinite (currentThresholdDb))
+        if (! fastmath::isFinite (currentThresholdDb))
         {
             currentThresholdDb = targetThresholdDb;
             thresholdDbSmooth.setCurrentAndTargetValue (targetThresholdDb);
@@ -108,7 +109,7 @@ void InputNoiseGate::process (juce::AudioBuffer<float>& buffer) noexcept
         const auto targetGain = gateOpen ? 1.0f : 0.0f;
         const auto gainCoefficient = targetGain > gain ? gateAttackCoefficient : gateReleaseCoefficient;
         gain = targetGain + gainCoefficient * (gain - targetGain);
-        if (! std::isfinite (gain))
+        if (! fastmath::isFinite (gain))
             gain = targetGain;
         else if (targetGain == 0.0f && gain < 1.0e-5f)
             gain = 0.0f;
@@ -117,7 +118,7 @@ void InputNoiseGate::process (juce::AudioBuffer<float>& buffer) noexcept
 
         const auto targetEnabledMix = enabled ? 1.0f : 0.0f;
         enabledMix = targetEnabledMix + bypassCoefficient * (enabledMix - targetEnabledMix);
-        if (! std::isfinite (enabledMix))
+        if (! fastmath::isFinite (enabledMix))
             enabledMix = targetEnabledMix;
         else if (targetEnabledMix == 0.0f && enabledMix < 1.0e-5f)
             enabledMix = 0.0f;
@@ -129,7 +130,7 @@ void InputNoiseGate::process (juce::AudioBuffer<float>& buffer) noexcept
         for (int channel = 0; channel < channels; ++channel)
         {
             const auto sample = buffer.getSample (channel, sampleIndex);
-            buffer.setSample (channel, sampleIndex, std::isfinite (sample) ? sample * appliedGain : 0.0f);
+            buffer.setSample (channel, sampleIndex, fastmath::isFinite (sample) ? sample * appliedGain : 0.0f);
         }
     }
 

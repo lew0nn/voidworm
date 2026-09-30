@@ -13,6 +13,7 @@ float onePoleCoefficient (double sampleRate, float frequency) noexcept
 
 void ArcChain::prepare (double sampleRate) noexcept
 {
+    clipTable();                    // built here, never on the audio thread
     const auto safeRate = juce::jmax (1.0, sampleRate);
     // 210/2.85k define ARC's collision bands. Cleanup remains internal but is
     // broadened so the user pre-EQ can excite useful upper-spectrum interaction.
@@ -46,11 +47,49 @@ float ArcChain::asymmetric (float input) noexcept
     return input / (1.0f + (input >= 0.0f ? 0.38f : 0.69f) * magnitude);
 }
 
+/* The integral of asymmetric, from 0: x/a - ln(1 + a x)/a^2 above zero and
+   -x/b - ln(1 - b x)/b^2 below, with a and b its two knees. In double: it
+   grows like |x|/a, and the difference quotient in process divides a
+   difference of two such values by a small step. */
+double ArcChain::asymmetricIntegral (double input) noexcept
+{
+    if (input >= 0.0)
+    {
+        constexpr double a = 0.38;
+        return input / a - std::log1p (a * input) / (a * a);
+    }
+    constexpr double b = 0.69;
+    return -input / b - std::log1p (-b * input) / (b * b);
+}
+
+/* The integral of reflectFold. The fold is a zero-mean triangle wave of
+   period 4, so its integral is periodic and bounded (between -1/2 and 1/2)
+   however hard the fold is driven, which keeps the difference quotient in
+   process well conditioned. */
+// asymmetric in double, as the table's slopes: the exact derivative of
+// asymmetricIntegral.
+double ArcChain::asymmetricExact (double input) noexcept
+{
+    return input / (1.0 + (input >= 0.0 ? 0.38 : 0.69) * std::abs (input));
+}
+
+const AntiderivativeTable& ArcChain::clipTable()
+{
+    static const AntiderivativeTable table (&asymmetricIntegral, &asymmetricExact);
+    return table;
+}
+
+float ArcChain::reflectFoldIntegral (float input) noexcept
+{
+    const auto wrapped = fastmath::wrap4 (input + 1.0f);
+    if (wrapped <= 2.0f)
+        return 0.5f * (wrapped - 1.0f) * (wrapped - 1.0f) - 0.5f;
+    return 0.5f - 0.5f * (3.0f - wrapped) * (3.0f - wrapped);
+}
+
 float ArcChain::reflectFold (float input) noexcept
 {
-    auto wrapped = std::fmod (input + 1.0f, 4.0f);
-    if (wrapped < 0.0f)
-        wrapped += 4.0f;
+    const auto wrapped = fastmath::wrap4 (input + 1.0f);
     return wrapped <= 2.0f ? wrapped - 1.0f : 3.0f - wrapped;
 }
 
@@ -95,9 +134,34 @@ void ArcChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettings e
                                                            + 2.1f * bandCollision);
             const auto biased = interaction * (1.0f + 1.8f * rot + 0.25f * overload)
                               + transientBias * (high >= 0.0f ? 1.0f : -0.55f);
-            const auto clipped = asymmetric (biased);
-            const auto folded = reflectFold (clipped * (1.0f + 3.4f * foldAmount));
-            const auto shaped = juce::jmap (foldAmount, clipped, folded);
+            /* The clip averaged over the step from the last sample,
+               (F(x) - F(x')) / (x - x'), rather than sampled: this clip is
+               driven hard by the band interaction ahead of it and was the
+               reactor's main source of aliasing (a bright tone left
+               inharmonic content 16 dB under it at 2x). Near-equal samples
+               take the clip at their midpoint. */
+            const auto clipIntegral = clipTable().evaluate (biased);
+            const auto clipStep = static_cast<double> (biased) - state.clipPrevious;
+            const auto clipped = std::abs (clipStep) > AntiderivativeTable::step
+                ? static_cast<float> ((clipIntegral - state.clipPreviousIntegral) / clipStep)
+                : asymmetric (0.5f * (biased + static_cast<float> (state.clipPrevious)));
+            state.clipPrevious = biased;
+            state.clipPreviousIntegral = clipIntegral;
+            /* The fold, averaged the same way. Once the clip was anti-aliased
+               this became ARC's largest source of aliasing, because the fold
+               amount rises with the input's brightness. The unfolded branch
+               is delayed half a sample to meet it, so the blend between them
+               stays in phase and the reactor is exactly one sample late. */
+            const auto foldInput = clipped * (1.0f + 3.4f * foldAmount);
+            const auto foldIntegral = reflectFoldIntegral (foldInput);
+            const auto foldStep = foldInput - state.foldPrevious;
+            const auto folded = std::abs (foldStep) > 1.0e-4f
+                ? (foldIntegral - state.foldPreviousIntegral) / foldStep
+                : reflectFold (0.5f * (foldInput + state.foldPrevious));
+            state.foldPrevious = foldInput;
+            state.foldPreviousIntegral = foldIntegral;
+            const auto unfolded = state.unfoldedAlignment.process (clipped);
+            const auto shaped = juce::jmap (foldAmount, unfolded, folded);
             state.cleanup += cleanupCoefficient * (shaped - state.cleanup);
             const auto dcBlocked = state.cleanup - state.dcInput + 0.9965f * state.dcOutput;
             state.dcInput = state.cleanup;

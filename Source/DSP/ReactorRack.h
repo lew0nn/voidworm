@@ -4,6 +4,7 @@
 #include "ArcChain.h"
 #include "Dynamics.h"
 #include "FurnaceChain.h"
+#include "SampleAlignment.h"
 #include "FeedbackChain.h"
 #include "MassChain.h"
 #include "NonlinearStage.h"
@@ -70,12 +71,17 @@ private:
     static int factorToIndex (int factor) noexcept;
     static float smoothstep (float low, float high, float value) noexcept;
 
+    static void alignOneSample (juce::dsp::AudioBlock<float>& block, StereoSampleDelay& delays) noexcept;
+
     std::array<MassChain, 4> massChains;
     std::array<FurnaceChain, 4> furnaceChains;
     std::array<ArcChain, 4> arcChains;
     std::array<FeedbackChain, 4> feedbackChains;
     std::array<Dynamics, 4> busDynamics;
     std::array<NonlinearStage, 4> busNonlinearStages;
+    // MASS and FEEDBACK kept in step with the anti-aliased FURNACE and ARC.
+    std::array<StereoSampleDelay, 4> massAlignment;
+    std::array<StereoSampleDelay, 4> feedbackAlignment;
     std::array<juce::AudioBuffer<float>, 4> massBuffers;
     std::array<juce::AudioBuffer<float>, 4> furnaceBuffers;
     std::array<juce::AudioBuffer<float>, 4> arcBuffers;

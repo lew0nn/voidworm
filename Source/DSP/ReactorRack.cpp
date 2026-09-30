@@ -1,4 +1,5 @@
 #include "ReactorRack.h"
+#include "FastMath.h"
 #include "PerformanceProfile.h"
 
 namespace voidworm
@@ -15,9 +16,9 @@ uint32_t repairNonFinitePath (juce::dsp::AudioBlock<float>& path,
         const auto* fallback = source.getChannelPointer (channel);
         for (size_t sample = 0; sample < path.getNumSamples(); ++sample)
         {
-            if (! std::isfinite (destination[sample]))
+            if (! fastmath::isFinite (destination[sample]))
             {
-                destination[sample] = std::isfinite (fallback[sample]) ? fallback[sample] : 0.0f;
+                destination[sample] = fastmath::isFinite (fallback[sample]) ? fallback[sample] : 0.0f;
                 ++repaired;
             }
         }
@@ -85,6 +86,8 @@ void ReactorRack::resetForPresetChange() noexcept
     for (auto& chain : feedbackChains) chain.reset();
     for (auto& dynamics : busDynamics) dynamics.reset();
     for (auto& stage : busNonlinearStages) stage.reset();
+    for (auto& pair : massAlignment) for (auto& delay : pair) delay.reset();
+    for (auto& pair : feedbackAlignment) for (auto& delay : pair) delay.reset();
     for (auto& weights : weightStates) weights = {};
     for (auto& routing : routingStates) routing = {};
     pathProcessingActive = {};
@@ -100,6 +103,20 @@ DspFaultCounters ReactorRack::getAndClearFaultCounters() noexcept
     const auto result = faultCounters;
     faultCounters = {};
     return result;
+}
+
+// FURNACE and ARC come out one sample late (see SampleAlignment.h); MASS and
+// FEEDBACK are delayed to match before BREACH mixes their products and the
+// bus sums them.
+void ReactorRack::alignOneSample (juce::dsp::AudioBlock<float>& block, StereoSampleDelay& delays) noexcept
+{
+    for (size_t channel = 0; channel < block.getNumChannels(); ++channel)
+    {
+        auto& delay = delays[juce::jmin (channel, delays.size() - 1)];
+        auto* samples = block.getChannelPointer (channel);
+        for (size_t sample = 0; sample < block.getNumSamples(); ++sample)
+            samples[sample] = delay.process (samples[sample]);
+    }
 }
 
 ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int oversamplingFactor,
@@ -120,7 +137,7 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
     constexpr auto silentRoutingGain = 1.0e-6f;
     for (size_t path = 0; path < routingTargets.size(); ++path)
     {
-        const auto amount = std::isfinite (amounts[path])
+        const auto amount = fastmath::isFinite (amounts[path])
             ? juce::jlimit (0.0f, 1.0f, amounts[path]) : 1.0f;
         const auto audible = safeSoloTarget != 0
             ? safeSoloTarget == static_cast<int> (path) + 1 : enabled[path];
@@ -217,6 +234,8 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
         if (processArc) arcRepairs = repairNonFinitePath (arcBlock, block);
     }
     if (massRepairs != 0) { massChain.reset(); faultCounters.nonFiniteRepairCount += massRepairs; }
+    if (processMass)
+        alignOneSample (massBlock, massAlignment[stateIndex]);
     if (furnaceRepairs != 0) { furnaceChain.reset(); faultCounters.nonFiniteRepairCount += furnaceRepairs; }
     if (arcRepairs != 0) { arcChain.reset(); faultCounters.nonFiniteRepairCount += arcRepairs; }
 #if VOIDWORM_ENABLE_DIAGNOSTICS
@@ -293,6 +312,8 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
         if (processFeedback) feedbackRepairs = repairNonFinitePath (feedbackBlock, block);
     }
     if (feedbackRepairs != 0) { feedbackChain.reset(); faultCounters.nonFiniteRepairCount += feedbackRepairs; }
+    if (processFeedback)
+        alignOneSample (feedbackBlock, feedbackAlignment[stateIndex]);
 #if VOIDWORM_ENABLE_DIAGNOSTICS
     diagnostics.feedback.repairedCount += feedbackRepairs;
     observeBlock (diagnostics.feedback, feedbackBlock);
@@ -400,7 +421,7 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
     // WELD's nonlinear component lives at the end of the oversampled reactor bus.
     // The odd-symmetric curve keeps zero at zero, progressively blends from the
     // existing bus to a hard industrial plateau, and is gain-compensated.
-    const auto safeWeld = std::isfinite (weld) ? juce::jlimit (0.0f, 1.0f, weld) : 0.30f;
+    const auto safeWeld = fastmath::isFinite (weld) ? juce::jlimit (0.0f, 1.0f, weld) : 0.30f;
     const auto saturationMix = safeWeld * safeWeld * (3.0f - 2.0f * safeWeld);
     const auto saturationDrive = 1.0f + 11.0f * safeWeld * safeWeld;
     const auto hardness = safeWeld * safeWeld;
@@ -432,7 +453,7 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
             auto* destination = block.getChannelPointer (channel);
             for (size_t sample = 0; sample < block.getNumSamples(); ++sample)
             {
-                if (! std::isfinite (destination[sample]))
+                if (! fastmath::isFinite (destination[sample]))
                 {
                     destination[sample] = 0.0f;
                     ++busRepairs;
