@@ -138,7 +138,7 @@ juce::ValueTree UserPresetStore::makeTree (const juce::String& name, const Param
     root.setProperty ("plugin", "VOIDWORM", nullptr);
     root.setProperty ("formatVersion", formatVersion, nullptr);
     root.setProperty ("presetName", name, nullptr);
-    root.setProperty ("createdWithVersion", "1.1.1", nullptr);
+    root.setProperty ("createdWithVersion", "1.2.0", nullptr);
     juce::ValueTree sound ("SOUND");
     sound.setProperty ("breach", p.breach, nullptr); sound.setProperty ("tear", p.tear, nullptr);
     sound.setProperty ("rot", p.rot, nullptr); sound.setProperty ("drive", p.driveDb, nullptr);
