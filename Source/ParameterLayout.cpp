@@ -49,11 +49,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout createVoidwormParameterLayou
     layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "output", 1 }, "OUTPUT",
         juce::NormalisableRange<float> { -24.0f, 6.0f, 0.01f }, -4.0f, juce::AudioParameterFloatAttributes().withLabel ("dB")));
     layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "surge", 1 }, "SURGE", false));
-    // 2X by default: 4X costs roughly 3x the CPU of 1X for a refinement most
-    // sources do not need, and the factor is reachable in one click. Presets
-    // deliberately preserve whatever the user has selected.
+    // 1X by default. Since 1.1.0 the clips and folds are anti-aliased in
+    // themselves, and 1X is cleaner than 1.0.1 was at 2X for about a quarter
+    // of that CPU. Sessions keep whatever factor they were saved with, and
+    // presets deliberately preserve whatever the user has selected.
     layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "oversample", 1 }, "OVERSAMPLING",
-                                                              juce::StringArray { "1X", "2X", "4X", "8X" }, 1));
+                                                              juce::StringArray { "1X", "2X", "4X", "8X" }, 0));
     // Off by default: the FIR path costs about five percent more than the IIR
     // one for a refinement that only matters on the highest factors, and it is
     // a single click away for anyone who wants it.

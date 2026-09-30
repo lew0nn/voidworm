@@ -82,7 +82,7 @@ The complete `VOIDWORM.vst3` bundle for Windows x64 hosts.
 
 ### [Standalone](https://github.com/lew0nn/voidworm/releases/download/v1.1.0/VOIDWORM-1.1.0-Windows-x64-Standalone.zip)
 
-Runs VOIDWORM without a DAW and includes integrated Audio/MIDI device settings.
+Runs VOIDWORM without a DAW and includes integrated Audio/MIDI device settings, with ASIO drivers alongside Windows Audio.
 
 ## Technical details
 
@@ -109,8 +109,8 @@ expressed as a share of realtime for a single instance:
 
 | Oversampling | CPU (HQ off) | CPU (HQ on) | Approx. instances per core |
 | --- | --- | --- | --- |
-| 1X | ~4% | ~4% | ~27 |
-| 2X (default) | ~7% | ~8% | ~14 |
+| 1X (default) | ~4% | ~4% | ~27 |
+| 2X | ~7% | ~8% | ~14 |
 | 4X | ~13% | ~15% | ~8 |
 | 8X | ~24% | ~28% | ~4 |
 
@@ -118,9 +118,10 @@ HQ mode swaps the IIR halfband filters for linear-phase FIR ones. It adds up to 
 fifth and is off by default, so it is rarely the control worth reaching for first.
 Stepping the oversampling factor down one notch saves considerably more.
 
-The defaults are 2X with HQ off. Presets deliberately preserve whatever factor you have selected rather
-than overriding it, so raising or lowering it is a global choice that survives preset
-changes.
+The defaults are 1X with HQ off: the clips and folds are anti-aliased in themselves, so 1X is
+already cleaner than older versions were at 2X. Sessions keep the factor they were saved with.
+Presets deliberately preserve whatever factor you have selected rather than overriding it, so
+raising or lowering it is a global choice that survives preset changes.
 
 </details>
 
@@ -150,7 +151,7 @@ Rescan plug-ins in the host.
 
 ### Standalone
 
-Extract the Standalone package and run `VOIDWORM.exe`. Audio/MIDI configuration is available from the Settings panel.
+Extract the Standalone package and run `VOIDWORM.exe`. Audio/MIDI configuration is available from the Settings panel. With an audio interface, choose its ASIO driver there for the lowest latency; input and output on two different devices (for example an interface in and a USB headset out) run on two clocks and can glitch.
 
 </details>
 

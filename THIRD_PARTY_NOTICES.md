@@ -19,6 +19,19 @@ JUCE contains or integrates additional third-party components under their own te
 
 Clone the repository with `--recurse-submodules`, or run `git submodule update --init --recursive`, to obtain the pinned JUCE source and its complete notices.
 
+## Steinberg ASIO SDK
+
+The Windows Standalone lists ASIO audio devices through three headers from Steinberg's ASIO SDK 2.3.4:
+
+- Source: <https://download.steinberg.net/sdk_downloads/ASIO-SDK_2.3.4_2025-10-15.zip>
+- SHA-256 of that archive: `d5ebf0c20dd2c5f43771fd0c1418f4b361bf52434ee670097cfa6b3a335e2eca`
+- Files: `asio.h`, `asiosys.h`, `iasiodrv.h`, unmodified
+- Path: `vendor/asiosdk`
+
+Steinberg offers the ASIO SDK under its proprietary ASIO licence or, alternatively, the GNU General Public License version 3. VOIDWORM uses the GPLv3 option, which is compatible with VOIDWORM's AGPL-3.0 under section 13 of both licences. The SDK's own licence statement is kept as `vendor/asiosdk/LICENSE.txt` and the GPLv3 text as `vendor/asiosdk/GPL-3.0.txt`. The SDK is © Steinberg Media Technologies GmbH and is not relicensed by VOIDWORM or LWNX DSP.
+
+ASIO is a trademark and software of Steinberg Media Technologies GmbH.
+
 ## Build and platform components
 
 VOIDWORM's build may use SDKs, compiler runtime libraries, system libraries, and packaging tools supplied separately by their respective vendors. Those components are not relicensed by VOIDWORM and are not included in the AGPL grant except where their own licences expressly provide otherwise.
