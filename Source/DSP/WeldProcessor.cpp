@@ -1,4 +1,5 @@
 #include "WeldProcessor.h"
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -17,7 +18,7 @@ void WeldProcessor::reset() noexcept
 
 float WeldProcessor::process (juce::AudioBuffer<float>& buffer, float amount) noexcept
 {
-    const auto weld = std::isfinite (amount) ? juce::jlimit (0.0f, 1.0f, amount) : 0.30f;
+    const auto weld = fastmath::isFinite (amount) ? juce::jlimit (0.0f, 1.0f, amount) : 0.30f;
     const auto thresholdDb = juce::jmap (weld, -1.0f, -22.0f);
     const auto threshold = juce::Decibels::decibelsToGain (thresholdDb);
     const auto ratio = 1.0f + 11.0f * weld;
@@ -33,7 +34,7 @@ float WeldProcessor::process (juce::AudioBuffer<float>& buffer, float amount) no
         for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
             detector = juce::jmax (detector, std::abs (buffer.getSample (channel, sample)));
 
-        if (! std::isfinite (detector) || ! std::isfinite (envelope) || ! std::isfinite (gain)
+        if (! fastmath::isFinite (detector) || ! fastmath::isFinite (envelope) || ! fastmath::isFinite (gain)
             || envelope < 0.0f || gain < 0.0f || gain > 1.0001f)
         {
             envelope = 0.0f;
@@ -70,8 +71,8 @@ float WeldProcessor::process (juce::AudioBuffer<float>& buffer, float amount) no
                 contained = std::copysign (juce::jmin (ceiling, shapedMagnitude), compressed);
             }
             const auto output = compressed + containmentStrength * (contained - compressed);
-            buffer.setSample (channel, sample, std::isfinite (output) ? output : 0.0f);
-            if (! std::isfinite (output))
+            buffer.setSample (channel, sample, fastmath::isFinite (output) ? output : 0.0f);
+            if (! fastmath::isFinite (output))
                 ++stateFaultCount;
         }
         minimumArtisticGain = juce::jmin (minimumArtisticGain, artisticGain);

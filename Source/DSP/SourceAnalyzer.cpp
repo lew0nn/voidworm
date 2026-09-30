@@ -1,4 +1,5 @@
 #include "SourceAnalyzer.h"
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -15,7 +16,7 @@ float SourceAnalyzer::follow (float current, float target, float attack, float r
 
 float SourceAnalyzer::bounded (float value) noexcept
 {
-    if (! std::isfinite (value) || value <= 0.0f)
+    if (! fastmath::isFinite (value) || value <= 0.0f)
         return 0.0f;
     return value / (1.0f + value);
 }
@@ -47,18 +48,18 @@ void SourceAnalyzer::reset() noexcept
 
 void SourceAnalyzer::processSampleState (float left, float right) noexcept
 {
-    const auto stateIsFinite = std::isfinite (rmsSquared)
-        && std::isfinite (fastEnvelopeState) && std::isfinite (slowEnvelopeState)
-        && std::isfinite (lowSquared) && std::isfinite (midSquared) && std::isfinite (highSquared)
-        && std::all_of (lowState.begin(), lowState.end(), [] (float value) { return std::isfinite (value); })
-        && std::all_of (midState.begin(), midState.end(), [] (float value) { return std::isfinite (value); });
+    const auto stateIsFinite = fastmath::isFinite (rmsSquared)
+        && fastmath::isFinite (fastEnvelopeState) && fastmath::isFinite (slowEnvelopeState)
+        && fastmath::isFinite (lowSquared) && fastmath::isFinite (midSquared) && fastmath::isFinite (highSquared)
+        && std::all_of (lowState.begin(), lowState.end(), [] (float value) { return fastmath::isFinite (value); })
+        && std::all_of (midState.begin(), midState.end(), [] (float value) { return fastmath::isFinite (value); });
     if (! stateIsFinite)
         reset();
 
     // Malformed host input must not poison the persistent analyzer state. The
     // generous finite bound is diagnostic protection, not audible clipping.
-    left = std::isfinite (left) ? juce::jlimit (-64.0f, 64.0f, left) : 0.0f;
-    right = std::isfinite (right) ? juce::jlimit (-64.0f, 64.0f, right) : 0.0f;
+    left = fastmath::isFinite (left) ? juce::jlimit (-64.0f, 64.0f, left) : 0.0f;
+    right = fastmath::isFinite (right) ? juce::jlimit (-64.0f, 64.0f, right) : 0.0f;
     const std::array<float, 2> input { left, right };
     const auto linkedMagnitude = juce::jmax (std::abs (left), std::abs (right));
     lastLinkedMagnitude = linkedMagnitude;

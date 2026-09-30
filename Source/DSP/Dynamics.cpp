@@ -43,7 +43,7 @@ void Dynamics::setParameters (float thresholdDb, float newRatio, float attackMs,
 
 float Dynamics::updateGain (State& state, float magnitude) noexcept
 {
-    if (! std::isfinite (magnitude) || ! std::isfinite (state.envelope) || ! std::isfinite (state.gain))
+    if (! fastmath::isFinite (magnitude) || ! fastmath::isFinite (state.envelope) || ! fastmath::isFinite (state.gain))
     {
         state = {};
         state.gain = 1.0f;

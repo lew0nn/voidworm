@@ -1,4 +1,5 @@
 #include "ReactorPreEq.h"
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -9,14 +10,14 @@ constexpr float butterworthQ = 0.70710678f;
 
 float finiteOr (float value, float fallback) noexcept
 {
-    return std::isfinite (value) ? value : fallback;
+    return fastmath::isFinite (value) ? value : fallback;
 }
 }
 
 bool ReactorPreEq::coefficientsAreFinite (const Coefficients& c) noexcept
 {
-    return std::isfinite (c.b0) && std::isfinite (c.b1) && std::isfinite (c.b2)
-        && std::isfinite (c.a1) && std::isfinite (c.a2);
+    return fastmath::isFinite (c.b0) && fastmath::isFinite (c.b1) && fastmath::isFinite (c.b2)
+        && fastmath::isFinite (c.a1) && fastmath::isFinite (c.a2);
 }
 
 bool ReactorPreEq::coefficientsAreStable (const Coefficients& c) noexcept
@@ -39,7 +40,7 @@ constexpr double filterRunawayLimit = 10000.0;
 
 bool ReactorPreEq::FilterState::isHealthy() const noexcept
 {
-    return std::isfinite (z1) && std::isfinite (z2)
+    return fastmath::isFinite (z1) && fastmath::isFinite (z2)
         && std::abs (z1) <= filterRunawayLimit && std::abs (z2) <= filterRunawayLimit;
 }
 
@@ -59,7 +60,7 @@ float ReactorPreEq::FilterState::process (float input, const Coefficients& c) no
 
 void ReactorPreEq::prepare (double newSampleRate) noexcept
 {
-    sampleRate = std::isfinite (newSampleRate) ? juce::jmax (1.0, newSampleRate) : 44100.0;
+    sampleRate = fastmath::isFinite (newSampleRate) ? juce::jmax (1.0, newSampleRate) : 44100.0;
     smoothingCoefficient = 1.0f - std::exp (-1.0f / (0.020f * static_cast<float> (sampleRate)));
     reset();
 }
@@ -84,8 +85,8 @@ uint32_t ReactorPreEq::getAndClearDspFaultCount() noexcept
 ReactorPreEq::Coefficients ReactorPreEq::normalise (double b0, double b1, double b2,
                                                     double a0, double a1, double a2) noexcept
 {
-    if (! std::isfinite (b0) || ! std::isfinite (b1) || ! std::isfinite (b2)
-        || ! std::isfinite (a0) || ! std::isfinite (a1) || ! std::isfinite (a2)
+    if (! fastmath::isFinite (b0) || ! fastmath::isFinite (b1) || ! fastmath::isFinite (b2)
+        || ! fastmath::isFinite (a0) || ! fastmath::isFinite (a1) || ! fastmath::isFinite (a2)
         || std::abs (a0) < 1.0e-14)
         return {};
 
@@ -97,7 +98,7 @@ ReactorPreEq::Coefficients ReactorPreEq::normalise (double b0, double b1, double
 
 ReactorEqSettings ReactorPreEq::sanitise (double rate, ReactorEqSettings settings) noexcept
 {
-    const auto safeRate = std::isfinite (rate) ? juce::jmax (1.0, rate) : 44100.0;
+    const auto safeRate = fastmath::isFinite (rate) ? juce::jmax (1.0, rate) : 44100.0;
     settings.hp = finiteOr (settings.hp, 20.0f);
     settings.focusFrequency = finiteOr (settings.focusFrequency, 1000.0f);
     settings.focusGainDb = finiteOr (settings.focusGainDb, 0.0f);
@@ -160,7 +161,7 @@ bool ReactorPreEq::coefficientsHaveSettled (const Coefficients& current,
 
 void ReactorPreEq::approach (Coefficients& current, const Coefficients& target, float amount) noexcept
 {
-    if (! std::isfinite (amount))
+    if (! fastmath::isFinite (amount))
     {
         current = target;
         return;
@@ -174,12 +175,12 @@ void ReactorPreEq::approach (Coefficients& current, const Coefficients& target, 
 
 void ReactorPreEq::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettings settings) noexcept
 {
-    const auto invalidSettings = ! std::isfinite (settings.hp)
-        || ! std::isfinite (settings.focusFrequency)
-        || ! std::isfinite (settings.focusGainDb)
-        || ! std::isfinite (settings.lp)
-        || ! std::isfinite (settings.focus2Frequency)
-        || ! std::isfinite (settings.focus2GainDb);
+    const auto invalidSettings = ! fastmath::isFinite (settings.hp)
+        || ! fastmath::isFinite (settings.focusFrequency)
+        || ! fastmath::isFinite (settings.focusGainDb)
+        || ! fastmath::isFinite (settings.lp)
+        || ! fastmath::isFinite (settings.focus2Frequency)
+        || ! fastmath::isFinite (settings.focus2GainDb);
     if (invalidSettings)
         ++dspFaultCount;
 
@@ -275,8 +276,8 @@ void ReactorPreEq::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettin
 
 float ReactorPreEq::responseMagnitude (const Coefficients& c, double rate, float frequency) noexcept
 {
-    if (! coefficientsAreStable (c) || ! std::isfinite (rate) || rate <= 0.0
-        || ! std::isfinite (frequency))
+    if (! coefficientsAreStable (c) || ! fastmath::isFinite (rate) || rate <= 0.0
+        || ! fastmath::isFinite (frequency))
         return 1.0f;
     const auto omega = juce::MathConstants<double>::twoPi * static_cast<double> (frequency) / rate;
     const std::complex<double> z1 = std::polar (1.0, -omega);
@@ -284,16 +285,16 @@ float ReactorPreEq::responseMagnitude (const Coefficients& c, double rate, float
     const auto numerator = c.b0 + c.b1 * z1 + c.b2 * z2;
     const auto denominator = 1.0 + c.a1 * z1 + c.a2 * z2;
     const auto denominatorMagnitude = std::abs (denominator);
-    if (! std::isfinite (denominatorMagnitude) || denominatorMagnitude < 1.0e-12)
+    if (! fastmath::isFinite (denominatorMagnitude) || denominatorMagnitude < 1.0e-12)
         return 1.0f;
     const auto magnitude = static_cast<float> (std::abs (numerator / denominator));
-    return std::isfinite (magnitude) ? magnitude : 1.0f;
+    return fastmath::isFinite (magnitude) ? magnitude : 1.0f;
 }
 
 float ReactorPreEq::getResponseMagnitude (double rate, float frequency,
                                           ReactorEqSettings settings) noexcept
 {
-    const auto safeRate = std::isfinite (rate) ? juce::jmax (1.0, rate) : 44100.0;
+    const auto safeRate = fastmath::isFinite (rate) ? juce::jmax (1.0, rate) : 44100.0;
     settings = sanitise (safeRate, settings);
     return responseMagnitude (makeHighPass (safeRate, settings.hp), safeRate, frequency)
          * responseMagnitude (makePeak (safeRate, settings.focusFrequency, settings.focusGainDb), safeRate, frequency)

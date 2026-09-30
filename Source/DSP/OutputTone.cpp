@@ -1,4 +1,5 @@
 #include "OutputTone.h"
+#include "FastMath.h"
 #include <complex>
 
 namespace voidworm
@@ -9,16 +10,16 @@ constexpr float butterworthQ = 0.70710678f;
 
 bool coefficientsAreFinite (const OutputTone::Coefficients& coefficients) noexcept
 {
-    return std::isfinite (coefficients.b0) && std::isfinite (coefficients.b1)
-        && std::isfinite (coefficients.b2) && std::isfinite (coefficients.a1)
-        && std::isfinite (coefficients.a2);
+    return fastmath::isFinite (coefficients.b0) && fastmath::isFinite (coefficients.b1)
+        && fastmath::isFinite (coefficients.b2) && fastmath::isFinite (coefficients.a1)
+        && fastmath::isFinite (coefficients.a2);
 }
 
 OutputTone::Coefficients normalise (float b0, float b1, float b2,
                                     float a0, float a1, float a2) noexcept
 {
-    if (! std::isfinite (b0) || ! std::isfinite (b1) || ! std::isfinite (b2)
-        || ! std::isfinite (a0) || ! std::isfinite (a1) || ! std::isfinite (a2)
+    if (! fastmath::isFinite (b0) || ! fastmath::isFinite (b1) || ! fastmath::isFinite (b2)
+        || ! fastmath::isFinite (a0) || ! fastmath::isFinite (a1) || ! fastmath::isFinite (a2)
         || std::abs (a0) < 1.0e-8f)
         return {};
     const auto inverse = 1.0f / a0;
@@ -31,12 +32,12 @@ OutputTone::Coefficients normalise (float b0, float b1, float b2,
 
 float OutputTone::BiquadState::process (float input, const Coefficients& coefficients, bool& fault) noexcept
 {
-    const auto safeInput = std::isfinite (input) ? input : 0.0f;
+    const auto safeInput = fastmath::isFinite (input) ? input : 0.0f;
     // The maximum configured EQ response cannot produce internal state near this
     // bound from the rack's bounded signal. Crossing it indicates corrupted or
     // coefficient-incompatible state, not ordinary program material.
     constexpr auto runawayLimit = 128.0f;
-    if (! std::isfinite (input) || ! std::isfinite (z1) || ! std::isfinite (z2)
+    if (! fastmath::isFinite (input) || ! fastmath::isFinite (z1) || ! fastmath::isFinite (z2)
         || std::abs (z1) > runawayLimit || std::abs (z2) > runawayLimit)
     {
         reset();
@@ -46,7 +47,7 @@ float OutputTone::BiquadState::process (float input, const Coefficients& coeffic
     const auto output = coefficients.b0 * safeInput + z1;
     const auto nextZ1 = coefficients.b1 * safeInput - coefficients.a1 * output + z2;
     const auto nextZ2 = coefficients.b2 * safeInput - coefficients.a2 * output;
-    if (! std::isfinite (output) || ! std::isfinite (nextZ1) || ! std::isfinite (nextZ2)
+    if (! fastmath::isFinite (output) || ! fastmath::isFinite (nextZ1) || ! fastmath::isFinite (nextZ2)
         || std::abs (output) > runawayLimit || std::abs (nextZ1) > runawayLimit
         || std::abs (nextZ2) > runawayLimit)
     {
@@ -143,7 +144,7 @@ OutputTone::Coefficients OutputTone::makeHighShelf (double rate, float frequency
 
 void OutputTone::prepare (double newSampleRate, int channels) noexcept
 {
-    sampleRate = std::isfinite (newSampleRate) ? juce::jmax (1.0, newSampleRate) : 44100.0;
+    sampleRate = fastmath::isFinite (newSampleRate) ? juce::jmax (1.0, newSampleRate) : 44100.0;
     channelCount = juce::jlimit (1, 2, channels);
     transitionSamples = juce::jmax (1, juce::roundToInt (0.015 * sampleRate));
     coefficientsInitialised = false;
@@ -188,10 +189,10 @@ uint32_t OutputTone::getAndClearDspFaultCount() noexcept
 
 void OutputTone::update (float range, float lowDb, float midDb, float highDb) noexcept
 {
-    range = std::isfinite (range) ? range : currentRange >= 0.0f ? currentRange : 0.92f;
-    lowDb = std::isfinite (lowDb) ? lowDb : currentLowDb <= 12.0f ? currentLowDb : 0.0f;
-    midDb = std::isfinite (midDb) ? midDb : currentMidDb <= 12.0f ? currentMidDb : 0.0f;
-    highDb = std::isfinite (highDb) ? highDb : currentHighDb <= 12.0f ? currentHighDb : 0.0f;
+    range = fastmath::isFinite (range) ? range : currentRange >= 0.0f ? currentRange : 0.92f;
+    lowDb = fastmath::isFinite (lowDb) ? lowDb : currentLowDb <= 12.0f ? currentLowDb : 0.0f;
+    midDb = fastmath::isFinite (midDb) ? midDb : currentMidDb <= 12.0f ? currentMidDb : 0.0f;
+    highDb = fastmath::isFinite (highDb) ? highDb : currentHighDb <= 12.0f ? currentHighDb : 0.0f;
     range = juce::jlimit (0.0f, 1.0f, range);
     lowDb = juce::jlimit (-12.0f, 12.0f, lowDb);
     midDb = juce::jlimit (-12.0f, 12.0f, midDb);
@@ -310,6 +311,6 @@ float OutputTone::getResponseMagnitude (double rate, float frequency, float rang
     auto magnitude = 1.0f;
     for (const auto& stage : response)
         magnitude *= coefficientMagnitude (stage, safeRate, frequency);
-    return std::isfinite (magnitude) ? magnitude : 0.0f;
+    return fastmath::isFinite (magnitude) ? magnitude : 0.0f;
 }
 }

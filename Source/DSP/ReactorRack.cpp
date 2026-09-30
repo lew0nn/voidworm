@@ -1,4 +1,5 @@
 #include "ReactorRack.h"
+#include "FastMath.h"
 #include "PerformanceProfile.h"
 
 namespace voidworm
@@ -15,9 +16,9 @@ uint32_t repairNonFinitePath (juce::dsp::AudioBlock<float>& path,
         const auto* fallback = source.getChannelPointer (channel);
         for (size_t sample = 0; sample < path.getNumSamples(); ++sample)
         {
-            if (! std::isfinite (destination[sample]))
+            if (! fastmath::isFinite (destination[sample]))
             {
-                destination[sample] = std::isfinite (fallback[sample]) ? fallback[sample] : 0.0f;
+                destination[sample] = fastmath::isFinite (fallback[sample]) ? fallback[sample] : 0.0f;
                 ++repaired;
             }
         }
@@ -136,7 +137,7 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
     constexpr auto silentRoutingGain = 1.0e-6f;
     for (size_t path = 0; path < routingTargets.size(); ++path)
     {
-        const auto amount = std::isfinite (amounts[path])
+        const auto amount = fastmath::isFinite (amounts[path])
             ? juce::jlimit (0.0f, 1.0f, amounts[path]) : 1.0f;
         const auto audible = safeSoloTarget != 0
             ? safeSoloTarget == static_cast<int> (path) + 1 : enabled[path];
@@ -420,7 +421,7 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
     // WELD's nonlinear component lives at the end of the oversampled reactor bus.
     // The odd-symmetric curve keeps zero at zero, progressively blends from the
     // existing bus to a hard industrial plateau, and is gain-compensated.
-    const auto safeWeld = std::isfinite (weld) ? juce::jlimit (0.0f, 1.0f, weld) : 0.30f;
+    const auto safeWeld = fastmath::isFinite (weld) ? juce::jlimit (0.0f, 1.0f, weld) : 0.30f;
     const auto saturationMix = safeWeld * safeWeld * (3.0f - 2.0f * safeWeld);
     const auto saturationDrive = 1.0f + 11.0f * safeWeld * safeWeld;
     const auto hardness = safeWeld * safeWeld;
@@ -452,7 +453,7 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
             auto* destination = block.getChannelPointer (channel);
             for (size_t sample = 0; sample < block.getNumSamples(); ++sample)
             {
-                if (! std::isfinite (destination[sample]))
+                if (! fastmath::isFinite (destination[sample]))
                 {
                     destination[sample] = 0.0f;
                     ++busRepairs;

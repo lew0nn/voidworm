@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -48,7 +49,7 @@ struct StageMetrics
     void observe (float value, int channel = 0) noexcept
     {
         const auto safeChannel = static_cast<size_t> (juce::jlimit (0, 1, channel));
-        if (! std::isfinite (value))
+        if (! fastmath::isFinite (value))
         {
             ++nonFiniteCount;
             value = 0.0f;
@@ -80,7 +81,7 @@ inline void observeBlock (StageMetrics& metrics,
             const auto value = block.getSample (static_cast<int> (channel),
                                                 static_cast<int> (sample));
             metrics.observe (value, static_cast<int> (channel));
-            if (std::isfinite (hardClipLevel) && std::isfinite (value)
+            if (fastmath::isFinite (hardClipLevel) && fastmath::isFinite (value)
                 && std::abs (value) >= hardClipLevel - 1.0e-6f)
                 ++metrics.clippedCount;
         }

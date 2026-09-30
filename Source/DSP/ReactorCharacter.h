@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -20,7 +21,7 @@ namespace character
 {
 inline float sanitise (float value) noexcept
 {
-    return std::isfinite (value) ? juce::jlimit (0.0f, 1.0f, value) : 0.5f;
+    return fastmath::isFinite (value) ? juce::jlimit (0.0f, 1.0f, value) : 0.5f;
 }
 
 inline ReactorCharacterSettings sanitise (ReactorCharacterSettings settings) noexcept

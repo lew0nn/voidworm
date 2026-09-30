@@ -1,4 +1,5 @@
 #include "VoidEngine.h"
+#include "FastMath.h"
 #include "PerformanceProfile.h"
 
 namespace voidworm
@@ -7,7 +8,7 @@ namespace
 {
 float finiteClamped (float value, float low, float high, float fallback) noexcept
 {
-    return std::isfinite (value) ? juce::jlimit (low, high, value) : fallback;
+    return fastmath::isFinite (value) ? juce::jlimit (low, high, value) : fallback;
 }
 }
 
@@ -228,7 +229,7 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
     inputNoiseGate.setParameters (p.gateEnabled, gateThreshold);
     reactorEnabled = p.reactorEnabled;
     for (size_t index = 0; index < reactorAmounts.size(); ++index)
-        reactorAmounts[index] = std::isfinite (p.reactorAmounts[index])
+        reactorAmounts[index] = fastmath::isFinite (p.reactorAmounts[index])
             ? juce::jlimit (0.0f, 1.0f, p.reactorAmounts[index]) : 1.0f;
     reactorCharacter = character::sanitise (p.reactorCharacter);
     reactorSolo = juce::jlimit (0, 4, p.reactorSolo);
@@ -271,7 +272,7 @@ uint32_t VoidEngine::repairNonFiniteBuffer (juce::AudioBuffer<float>& buffer) no
     uint32_t repaired = 0;
     for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
-            if (! std::isfinite (buffer.getSample (channel, sample)))
+            if (! fastmath::isFinite (buffer.getSample (channel, sample)))
             {
                 buffer.setSample (channel, sample, 0.0f);
                 ++repaired;
@@ -289,7 +290,7 @@ ReactorActivity VoidEngine::getReactorActivity() const noexcept
 
 float VoidEngine::emergencyLimit (float sample) noexcept
 {
-    if (! std::isfinite (sample))
+    if (! fastmath::isFinite (sample))
     {
         recordNonFiniteRepairs();
         return 0.0f;
@@ -404,14 +405,14 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
             const auto drive = driveSmooth.getNextValue();
             const auto inputLeft = buffer.getSample (0, sampleIndex);
             const auto inputRight = channels > 1 ? buffer.getSample (1, sampleIndex) : inputLeft;
-            const auto drivenLeft = std::isfinite (inputLeft) ? inputLeft * drive : 0.0f;
-            const auto drivenRight = std::isfinite (inputRight) ? inputRight * drive : 0.0f;
+            const auto drivenLeft = fastmath::isFinite (inputLeft) ? inputLeft * drive : 0.0f;
+            const auto drivenRight = fastmath::isFinite (inputRight) ? inputRight * drive : 0.0f;
 #if VOIDWORM_ENABLE_DIAGNOSTICS
             diagnostics.afterDrive.observe (drivenLeft, 0);
             if (channels > 1)
                 diagnostics.afterDrive.observe (drivenRight, 1);
 #endif
-            if (! std::isfinite (inputLeft) || ! std::isfinite (inputRight))
+            if (! fastmath::isFinite (inputLeft) || ! fastmath::isFinite (inputRight))
                 recordNonFiniteRepairs();
             sourceAnalyzer.processSampleState (drivenLeft, drivenRight);
             buffer.setSample (0, sampleIndex, drivenLeft);
@@ -506,7 +507,7 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
         VOIDWORM_PROFILE_SCOPE (performance::Stage::weldDynamics);
         weldReduction = weldProcessor.process (buffer, currentWeld);
     }
-    weldGainReductionDb.store (std::isfinite (weldReduction) ? weldReduction : 0.0f,
+    weldGainReductionDb.store (fastmath::isFinite (weldReduction) ? weldReduction : 0.0f,
                                std::memory_order_relaxed);
 #if VOIDWORM_ENABLE_DIAGNOSTICS
     observeBuffer (diagnostics.afterWeld, buffer);
@@ -557,7 +558,7 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
         limiterReduction = finalLimiter.process (buffer, limiterEnabled,
                                                  limiterThresholdSmooth, limiterCeilingSmooth);
     }
-    limiterGainReductionDb.store (std::isfinite (limiterReduction) ? limiterReduction : 0.0f,
+    limiterGainReductionDb.store (fastmath::isFinite (limiterReduction) ? limiterReduction : 0.0f,
                                   std::memory_order_relaxed);
 #if VOIDWORM_ENABLE_DIAGNOSTICS
     observeBuffer (diagnostics.afterLimiter, buffer);
@@ -580,7 +581,7 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
                 const auto output = safeLimited * containmentGain;
 #if VOIDWORM_ENABLE_DIAGNOSTICS
                 diagnostics.finalOutput.observe (output, channel);
-                if (std::isfinite (limited) && safeLimited != limited)
+                if (fastmath::isFinite (limited) && safeLimited != limited)
                     ++diagnostics.finalOutput.clippedCount;
 #endif
                 buffer.setSample (channel, sampleIndex, output);

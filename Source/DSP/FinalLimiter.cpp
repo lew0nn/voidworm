@@ -1,4 +1,5 @@
 #include "FinalLimiter.h"
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -54,7 +55,7 @@ float FinalLimiter::process (juce::AudioBuffer<float>& buffer, bool enabled,
             detector = juce::jmax (detector, std::abs (input * preGain));
         }
 
-        if (! std::isfinite (detector) || ! std::isfinite (gain)
+        if (! fastmath::isFinite (detector) || ! fastmath::isFinite (gain)
             || gain < 0.0f || gain > 1.0001f)
         {
             detector = 0.0f;
@@ -90,7 +91,7 @@ float FinalLimiter::process (juce::AudioBuffer<float>& buffer, bool enabled,
                 if (std::abs (driven) > 1.0e-12f)
                     appliedGain = juce::jmin (1.0f, std::abs (output / driven));
             }
-            if (! std::isfinite (output))
+            if (! fastmath::isFinite (output))
             {
                 output = 0.0f;
                 ++stateFaultCount;

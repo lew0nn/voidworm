@@ -1,4 +1,5 @@
 #include "FurnaceChain.h"
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -154,16 +155,16 @@ void FurnaceChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettin
         {
             auto& state = states[juce::jmin (channel, states.size() - 1)];
             auto* output = block.getChannelPointer (channel);
-            const auto input = std::isfinite (output[sample]) ? output[sample] : 0.0f;
+            const auto input = fastmath::isFinite (output[sample]) ? output[sample] : 0.0f;
             constexpr auto stateLimit = 32.0f;
-            const auto validState = std::isfinite (state.preEmphasisLow)
-                && std::isfinite (state.intermediateLow) && std::isfinite (state.cleanup)
-                && std::isfinite (state.sagEnvelope) && std::isfinite (state.dcInput)
-                && std::isfinite (state.dcOutput) && std::abs (state.preEmphasisLow) <= stateLimit
+            const auto validState = fastmath::isFinite (state.preEmphasisLow)
+                && fastmath::isFinite (state.intermediateLow) && fastmath::isFinite (state.cleanup)
+                && fastmath::isFinite (state.sagEnvelope) && fastmath::isFinite (state.dcInput)
+                && fastmath::isFinite (state.dcOutput) && std::abs (state.preEmphasisLow) <= stateLimit
                 && std::abs (state.intermediateLow) <= stateLimit && std::abs (state.cleanup) <= stateLimit
                 && std::abs (state.sagEnvelope) <= stateLimit && std::abs (state.dcInput) <= stateLimit
                 && std::abs (state.dcOutput) <= stateLimit;
-            if (! validState || ! std::isfinite (output[sample]))
+            if (! validState || ! fastmath::isFinite (output[sample]))
             {
                 state = {};
                 output[sample] = input;

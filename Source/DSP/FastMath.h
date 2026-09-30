@@ -6,6 +6,24 @@
 
 namespace voidworm::fastmath
 {
+/* The same answer as std::isfinite -- false for NaN and both infinities --
+   from the exponent bits alone. MSVC compiles std::isfinite on a float to a
+   library call (measured 2.5 ns against 0.75 ns for this), and the DSP asks
+   it per sample, per filter stage, in every validity check. */
+inline bool isFinite (float x) noexcept
+{
+    std::uint32_t bits;
+    std::memcpy (&bits, &x, sizeof bits);
+    return (bits & 0x7f800000u) != 0x7f800000u;
+}
+
+inline bool isFinite (double x) noexcept
+{
+    std::uint64_t bits;
+    std::memcpy (&bits, &x, sizeof bits);
+    return (bits & 0x7ff0000000000000ull) != 0x7ff0000000000000ull;
+}
+
 /* log2 and 2^x for gain computers, which run per sample at the oversampled
    rate in every reactor. A gain needs a ten-thousandth of a dB, not full
    precision: log2 is within 1.5e-5 over the whole positive float range and

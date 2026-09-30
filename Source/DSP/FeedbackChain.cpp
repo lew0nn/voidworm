@@ -1,4 +1,5 @@
 #include "FeedbackChain.h"
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -90,13 +91,13 @@ void FeedbackChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSetti
         {
             auto& state = states[juce::jmin (channel, states.size() - 1)];
             auto* output = block.getChannelPointer (channel);
-            const auto input = std::isfinite (output[sample]) ? output[sample] : 0.0f;
+            const auto input = fastmath::isFinite (output[sample]) ? output[sample] : 0.0f;
             constexpr auto stateLimit = 8.0f;
-            const auto stateIsValid = std::isfinite (state.recursive) && std::isfinite (state.damping)
-                && std::isfinite (state.dcInput) && std::isfinite (state.dcOutput)
+            const auto stateIsValid = fastmath::isFinite (state.recursive) && fastmath::isFinite (state.damping)
+                && fastmath::isFinite (state.dcInput) && fastmath::isFinite (state.dcOutput)
                 && std::abs (state.recursive) <= stateLimit && std::abs (state.damping) <= stateLimit
                 && std::abs (state.dcInput) <= stateLimit && std::abs (state.dcOutput) <= stateLimit;
-            if (! stateIsValid || ! std::isfinite (output[sample]))
+            if (! stateIsValid || ! fastmath::isFinite (output[sample]))
             {
                 state = {};
                 output[sample] = input;
@@ -113,8 +114,8 @@ void FeedbackChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSetti
             state.dcInput = density;
             state.dcOutput = dcBlocked;
             const auto processed = safetyDynamics.processSample (static_cast<int> (channel), dcBlocked);
-            if (! std::isfinite (processed) || ! std::isfinite (state.recursive)
-                || ! std::isfinite (state.damping) || ! std::isfinite (state.dcOutput)
+            if (! fastmath::isFinite (processed) || ! fastmath::isFinite (state.recursive)
+                || ! fastmath::isFinite (state.damping) || ! fastmath::isFinite (state.dcOutput)
                 || std::abs (state.recursive) > stateLimit || std::abs (state.damping) > stateLimit
                 || std::abs (state.dcOutput) > stateLimit)
             {
