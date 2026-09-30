@@ -85,6 +85,8 @@ void ReactorRack::resetForPresetChange() noexcept
     for (auto& chain : feedbackChains) chain.reset();
     for (auto& dynamics : busDynamics) dynamics.reset();
     for (auto& stage : busNonlinearStages) stage.reset();
+    for (auto& pair : massAlignment) for (auto& delay : pair) delay.reset();
+    for (auto& pair : feedbackAlignment) for (auto& delay : pair) delay.reset();
     for (auto& weights : weightStates) weights = {};
     for (auto& routing : routingStates) routing = {};
     pathProcessingActive = {};
@@ -100,6 +102,20 @@ DspFaultCounters ReactorRack::getAndClearFaultCounters() noexcept
     const auto result = faultCounters;
     faultCounters = {};
     return result;
+}
+
+// FURNACE and ARC come out one sample late (see SampleAlignment.h); MASS and
+// FEEDBACK are delayed to match before BREACH mixes their products and the
+// bus sums them.
+void ReactorRack::alignOneSample (juce::dsp::AudioBlock<float>& block, StereoSampleDelay& delays) noexcept
+{
+    for (size_t channel = 0; channel < block.getNumChannels(); ++channel)
+    {
+        auto& delay = delays[juce::jmin (channel, delays.size() - 1)];
+        auto* samples = block.getChannelPointer (channel);
+        for (size_t sample = 0; sample < block.getNumSamples(); ++sample)
+            samples[sample] = delay.process (samples[sample]);
+    }
 }
 
 ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int oversamplingFactor,
@@ -217,6 +233,8 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
         if (processArc) arcRepairs = repairNonFinitePath (arcBlock, block);
     }
     if (massRepairs != 0) { massChain.reset(); faultCounters.nonFiniteRepairCount += massRepairs; }
+    if (processMass)
+        alignOneSample (massBlock, massAlignment[stateIndex]);
     if (furnaceRepairs != 0) { furnaceChain.reset(); faultCounters.nonFiniteRepairCount += furnaceRepairs; }
     if (arcRepairs != 0) { arcChain.reset(); faultCounters.nonFiniteRepairCount += arcRepairs; }
 #if VOIDWORM_ENABLE_DIAGNOSTICS
@@ -293,6 +311,8 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
         if (processFeedback) feedbackRepairs = repairNonFinitePath (feedbackBlock, block);
     }
     if (feedbackRepairs != 0) { feedbackChain.reset(); faultCounters.nonFiniteRepairCount += feedbackRepairs; }
+    if (processFeedback)
+        alignOneSample (feedbackBlock, feedbackAlignment[stateIndex]);
 #if VOIDWORM_ENABLE_DIAGNOSTICS
     diagnostics.feedback.repairedCount += feedbackRepairs;
     observeBlock (diagnostics.feedback, feedbackBlock);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "SampleAlignment.h"
 #include "Dynamics.h"
 #include "ReactorPreEq.h"
 #include "ReactorCharacter.h"
@@ -28,10 +29,17 @@ private:
         float cleanup = 0.0f;
         float dcInput = 0.0f;
         float dcOutput = 0.0f;
+        double clipPrevious = 0.0;
+        double clipPreviousIntegral = 0.0;
+        float foldPrevious = 0.0f;
+        float foldPreviousIntegral = 0.0f;
+        HalfSampleDelay unfoldedAlignment;
     };
 
     static float asymmetric (float input) noexcept;
     static float reflectFold (float input) noexcept;
+    static double asymmetricIntegral (double input) noexcept;
+    static float reflectFoldIntegral (float input) noexcept;
     std::array<State, 2> states {};
     Dynamics compressor;
     ReactorPreEq preEq;

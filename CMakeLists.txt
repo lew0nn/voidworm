@@ -60,6 +60,7 @@ target_sources(VOIDWORM PRIVATE
     Source/DSP/MassChain.h
     Source/DSP/FurnaceChain.cpp
     Source/DSP/FurnaceChain.h
+    Source/DSP/SampleAlignment.h
     Source/DSP/ReactorRack.cpp
     Source/DSP/ReactorRack.h
     Source/DSP/ReactorCharacter.h

@@ -53,6 +53,7 @@ void VoidEngine::reset() noexcept
     sourceAnalyzer.reset();
     oversampling.reset();
     dryOversampling.reset();
+    for (auto& delay : dryAlignment) delay.reset();
     reactorRack.reset();
     tearProcessor.reset();
     weldProcessor.reset();
@@ -380,7 +381,16 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
             dry.copyFrom (channel, 0, buffer, channel, 0, samples);
         dryOversampling.select (oversampleFactor, hqMode);
         const auto& constDry = dry;
-        dryOversampling.processSamplesUp (juce::dsp::AudioBlock<const float> (constDry));
+        auto dryUp = dryOversampling.processSamplesUp (juce::dsp::AudioBlock<const float> (constDry));
+        // And the sample the anti-aliased reactors take (SampleAlignment.h), at
+        // the same oversampled rate they run at.
+        for (size_t channel = 0; channel < dryUp.getNumChannels(); ++channel)
+        {
+            auto& delay = dryAlignment[juce::jmin (channel, dryAlignment.size() - 1)];
+            auto* up = dryUp.getChannelPointer (channel);
+            for (size_t sample = 0; sample < dryUp.getNumSamples(); ++sample)
+                up[sample] = delay.process (up[sample]);
+        }
         juce::dsp::AudioBlock<float> dryDown (dry);
         dryOversampling.processSamplesDown (dryDown);
         dryOversampling.applyFixedLatency (dry);

@@ -36,10 +36,16 @@ private:
         float sagEnvelope = 0.0f;
         float dcInput = 0.0f;
         float dcOutput = 0.0f;
+        double starvePrevious = 0.0;
+        double starvePreviousIntegral = 0.0;
+        double fuzzPrevious = 0.0;
+        double fuzzPreviousIntegral = 0.0;
     };
 
     static float asymmetricClip (float input) noexcept;
     static float reflectFold (float input) noexcept;
+    static double asymmetricClipIntegral (double input) noexcept;
+    static float antialiasedClip (float input, double& previous, double& previousIntegral) noexcept;
     std::array<State, 2> states {};
     Dynamics compressor;
     ReactorPreEq preEq;
