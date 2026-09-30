@@ -2895,6 +2895,11 @@ void VoidwormAudioProcessorEditor::applySoundSnapshot (voidworm::Parameters p, c
     setParameterActual (processor.parameters, "limiterCeiling", p.limiterCeilingDb);
     setParameterActual (processor.parameters, "gateEnabled", p.gateEnabled ? 1.0f : 0.0f);
     setParameterActual (processor.parameters, "gateThreshold", p.gateThresholdDb);
+    // SAW is part of a sound: a user preset brings back its own, and the
+    // factory presets, designed without it, switch it off.
+    setParameterActual (processor.parameters, "sawEnabled", p.sawEnabled ? 1.0f : 0.0f);
+    setParameterActual (processor.parameters, "sawAmount", p.sawAmount);
+    setParameterActual (processor.parameters, "sawWave", static_cast<float> (p.sawWaveform));
 
     const std::array<const char*, 4> amountIds {
         "massAmount", "furnaceAmount", "arcAmount", "feedbackAmount"

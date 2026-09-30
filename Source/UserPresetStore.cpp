@@ -44,6 +44,8 @@ bool validSound (const Parameters& p) noexcept
         return false;
     if (! std::all_of (p.reactorAmounts.begin(), p.reactorAmounts.end(), [] (float value)
         { return finite (value) && value >= 0.0f && value <= 1.0f; })) return false;
+    if (! finite (p.sawAmount) || p.sawAmount < 0.0f || p.sawAmount > 1.0f
+        || p.sawWaveform < 0 || p.sawWaveform > 2) return false;
     return validEq (p.massEq) && validEq (p.furnaceEq) && validEq (p.arcEq) && validEq (p.feedbackEq);
 }
 
@@ -149,6 +151,9 @@ juce::ValueTree UserPresetStore::makeTree (const juce::String& name, const Param
     sound.setProperty ("limiterCeiling", p.limiterCeilingDb, nullptr);
     sound.setProperty ("gateEnabled", p.gateEnabled, nullptr);
     sound.setProperty ("gateThreshold", p.gateThresholdDb, nullptr);
+    sound.setProperty ("sawEnabled", p.sawEnabled, nullptr);
+    sound.setProperty ("sawAmount", p.sawAmount, nullptr);
+    sound.setProperty ("sawWave", p.sawWaveform, nullptr);
     constexpr std::array<const char*, 4> paths { "mass", "furnace", "arc", "feedback" };
     for (size_t i = 0; i < paths.size(); ++i)
     {
@@ -199,6 +204,12 @@ bool UserPresetStore::readTree (const juce::ValueTree& root, UserPreset& result,
     p.gateEnabled = sound.hasProperty ("gateEnabled") ? static_cast<bool> (sound["gateEnabled"]) : true;
     p.gateThresholdDb = sound.hasProperty ("gateThreshold")
         ? static_cast<float> (sound["gateThreshold"]) : -50.0f;
+    // SAW arrived in 1.2.0. A preset saved before it has no SAW, so it loads
+    // with SAW off and sounds as it did; an older VOIDWORM reading a newer
+    // preset ignores these three and plays the rest.
+    p.sawEnabled = sound.hasProperty ("sawEnabled") && static_cast<bool> (sound["sawEnabled"]);
+    p.sawAmount = sound.hasProperty ("sawAmount") ? static_cast<float> (sound["sawAmount"]) : Parameters {}.sawAmount;
+    p.sawWaveform = sound.hasProperty ("sawWave") ? static_cast<int> (sound["sawWave"]) : 0;
     constexpr std::array<const char*, 4> paths { "mass", "furnace", "arc", "feedback" };
     for (size_t i = 0; i < paths.size(); ++i)
     {
@@ -300,6 +311,7 @@ bool UserPresetStore::soundStatesEqual (const Parameters& a, const Parameters& b
         || a.limiterEnabled != b.limiterEnabled || ! same (a.limiterThresholdDb,b.limiterThresholdDb)
         || ! same (a.limiterCeilingDb,b.limiterCeilingDb) || a.reactorEnabled != b.reactorEnabled) return false;
     if (a.gateEnabled != b.gateEnabled || ! same (a.gateThresholdDb, b.gateThresholdDb)) return false;
+    if (a.sawEnabled != b.sawEnabled || a.sawWaveform != b.sawWaveform || ! same (a.sawAmount, b.sawAmount)) return false;
     for (size_t i=0;i<4;++i) if (! same (a.reactorAmounts[i],b.reactorAmounts[i])) return false;
     const std::array<float,8> ac { a.reactorCharacter.massSaturation,a.reactorCharacter.massHarmonics,a.reactorCharacter.furnaceStarve,a.reactorCharacter.furnaceFold,a.reactorCharacter.arcXmod,a.reactorCharacter.arcFold,a.reactorCharacter.feedbackReturn,a.reactorCharacter.feedbackDamp };
     const std::array<float,8> bc { b.reactorCharacter.massSaturation,b.reactorCharacter.massHarmonics,b.reactorCharacter.furnaceStarve,b.reactorCharacter.furnaceFold,b.reactorCharacter.arcXmod,b.reactorCharacter.arcFold,b.reactorCharacter.feedbackReturn,b.reactorCharacter.feedbackDamp };
