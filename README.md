@@ -7,7 +7,7 @@
 <p align="center"><em>Source-reactive industrial distortion for Windows.</em></p>
 
 <p align="center">
-  <a href="https://github.com/lew0nn/voidworm/releases/tag/v1.0.1"><img alt="Version 1.0.1, open release" src="https://img.shields.io/badge/version-1.0.1-8A00E6?style=flat-square&amp;labelColor=201726"></a>
+  <a href="https://github.com/lew0nn/voidworm/releases/tag/v1.1.0"><img alt="Version 1.1.0, open release" src="https://img.shields.io/badge/version-1.1.0-8A00E6?style=flat-square&amp;labelColor=201726"></a>
   <a href="#download"><img alt="Windows x64 downloads" src="https://img.shields.io/badge/platform-Windows%20x64-0078D4?style=flat-square&amp;labelColor=17202A"></a>
   <a href="#download"><img alt="VST3 and Standalone downloads" src="https://img.shields.io/badge/formats-VST3%20%7C%20Standalone-FF0051?style=flat-square&amp;labelColor=28171D"></a>
   <a href="https://github.com/juce-framework/JUCE/releases/tag/8.0.8"><img alt="JUCE 8.0.8" src="https://img.shields.io/badge/JUCE-8.0.8-00A8B5?style=flat-square&amp;labelColor=152326"></a>
@@ -68,19 +68,19 @@ Factory and user presets share one browser, matrix, and real-time search system.
 
 ## Download
 
-### [Windows installer](https://github.com/lew0nn/voidworm/releases/download/v1.0.1/VOIDWORM-1.0.1-Windows-x64-Setup.exe)
+### [Windows installer](https://github.com/lew0nn/voidworm/releases/download/v1.1.0/VOIDWORM-1.1.0-Windows-x64-Setup.exe)
 
 Installs the VST3 plug-in, the Standalone application, or both.
 
-### [MSI installer](https://github.com/lew0nn/voidworm/releases/download/v1.0.1/VOIDWORM-1.0.1-Windows-x64.msi)
+### [MSI installer](https://github.com/lew0nn/voidworm/releases/download/v1.1.0/VOIDWORM-1.1.0-Windows-x64.msi)
 
 Installs both the VST3 plug-in and Standalone application through Windows Installer.
 
-### [VST3](https://github.com/lew0nn/voidworm/releases/download/v1.0.1/VOIDWORM-1.0.1-Windows-x64-VST3.zip)
+### [VST3](https://github.com/lew0nn/voidworm/releases/download/v1.1.0/VOIDWORM-1.1.0-Windows-x64-VST3.zip)
 
 The complete `VOIDWORM.vst3` bundle for Windows x64 hosts.
 
-### [Standalone](https://github.com/lew0nn/voidworm/releases/download/v1.0.1/VOIDWORM-1.0.1-Windows-x64-Standalone.zip)
+### [Standalone](https://github.com/lew0nn/voidworm/releases/download/v1.1.0/VOIDWORM-1.1.0-Windows-x64-Standalone.zip)
 
 Runs VOIDWORM without a DAW and includes integrated Audio/MIDI device settings.
 
@@ -109,13 +109,13 @@ expressed as a share of realtime for a single instance:
 
 | Oversampling | CPU (HQ off) | CPU (HQ on) | Approx. instances per core |
 | --- | --- | --- | --- |
-| 1X | ~6% | ~6% | ~17 |
-| 2X (default) | ~10% | ~11% | ~10 |
-| 4X | ~16% | ~17% | ~6 |
-| 8X | ~30% | ~32% | ~3 |
+| 1X | ~4% | ~4% | ~27 |
+| 2X (default) | ~7% | ~8% | ~14 |
+| 4X | ~13% | ~15% | ~8 |
+| 8X | ~24% | ~28% | ~4 |
 
-HQ mode swaps the IIR halfband filters for linear-phase FIR ones. It adds roughly five
-percent and is off by default, so it is rarely the control worth reaching for first.
+HQ mode swaps the IIR halfband filters for linear-phase FIR ones. It adds up to about a
+fifth and is off by default, so it is rarely the control worth reaching for first.
 Stepping the oversampling factor down one notch saves considerably more.
 
 The defaults are 2X with HQ off. Presets deliberately preserve whatever factor you have selected rather
@@ -188,4 +188,4 @@ Built with C++17, JUCE 8.0.8, and CMake.
 
 <p align="center"><sub>Copyright © 2026 lewonn / LWNX DSP.</sub></p>
 
-<p align="center"><strong>VOIDWORM 1.0.1 · LWNX DSP</strong></p>
+<p align="center"><strong>VOIDWORM 1.1.0 · LWNX DSP</strong></p>
