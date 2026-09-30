@@ -247,6 +247,24 @@ void ReactorPreEq::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettin
                 ++dspFaultCount;
             }
 
+    /* Only the stages that do something run. A peaking stage at 0 dB comes
+       out of makePeak as b1 = a1 and b2 = a2 exactly, with b0 within a
+       rounding of 1, and from rest it passes the input through to below float
+       precision -- which is where every reactor's two focus bands sit by
+       default, half of each reactor's pre-EQ at the oversampled rate. */
+    std::array<size_t, 4> activeStages {};
+    size_t activeCount = 0;
+    for (size_t stage = 0; stage < currentCoefficients.size(); ++stage)
+    {
+        const auto& c = currentCoefficients[stage];
+        auto passThrough = ! interpolating && std::abs (c.b0 - 1.0) < 1.0e-12
+                           && c.b1 == c.a1 && c.b2 == c.a2;
+        for (size_t channel = 0; channel < channels && passThrough; ++channel)
+            passThrough = states[channel][stage].z1 == 0.0 && states[channel][stage].z2 == 0.0;
+        if (! passThrough)
+            activeStages[activeCount++] = stage;
+    }
+
     for (size_t sample = 0; sample < block.getNumSamples(); ++sample)
     {
         if (interpolating)
@@ -256,8 +274,11 @@ void ReactorPreEq::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettin
         for (size_t channel = 0; channel < channels; ++channel)
         {
             auto value = block.getSample (static_cast<int> (channel), static_cast<int> (sample));
-            for (size_t stage = 0; stage < currentCoefficients.size(); ++stage)
+            for (size_t k = 0; k < activeCount; ++k)
+            {
+                const auto stage = activeStages[k];
                 value = states[channel][stage].process (value, currentCoefficients[stage]);
+            }
             block.setSample (static_cast<int> (channel), static_cast<int> (sample), value);
         }
     }
