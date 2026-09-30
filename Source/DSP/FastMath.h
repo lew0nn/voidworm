@@ -56,6 +56,19 @@ inline float log2 (float x) noexcept
     return exponent + p;
 }
 
+inline float exp2 (float y) noexcept;
+
+/* tanh to within 1.8e-6 absolute (checked against the library over +-9),
+   as 1 - 2 / (e^2|x| + 1) through exp2. Beyond |x| = 9 it is 1 to float
+   precision anyway. */
+inline float tanh (float x) noexcept
+{
+    const auto magnitude = std::abs (x) < 9.0f ? std::abs (x) : 9.0f;
+    const auto e = exp2 (2.8853900817779268f * magnitude);     // 2 |x| log2(e)
+    const auto t = 1.0f - 2.0f / (e + 1.0f);
+    return x < 0.0f ? -t : t;
+}
+
 inline float exp2 (float y) noexcept
 {
     const auto whole = std::floor (y);

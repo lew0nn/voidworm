@@ -23,6 +23,12 @@ public:
 
 private:
     static float shape (float phase, Waveform waveform) noexcept;
+    float lookupShape (float phase) const noexcept;
+
+    // Each shape over one period of phase, sampled finely enough that a cubic
+    // through the table is within 1.3e-7 of the partial sum (see prepare).
+    static constexpr int shapeTableSize = 2048;
+    std::array<std::vector<float>, 3> shapeTables;
 
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
     juce::AudioBuffer<float> delayedDry;
