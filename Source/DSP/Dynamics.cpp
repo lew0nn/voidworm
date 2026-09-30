@@ -1,4 +1,5 @@
 #include "Dynamics.h"
+#include "FastMath.h"
 
 namespace voidworm
 {
@@ -34,6 +35,8 @@ void Dynamics::setParameters (float thresholdDb, float newRatio, float attackMs,
     parametersInitialised = true;
     threshold = juce::Decibels::decibelsToGain (thresholdDb);
     ratio = newRatio;
+    log2Threshold = std::log2 (threshold);
+    slope = 1.0f - 1.0f / ratio;
     attackCoefficient = std::exp (-1.0f / (0.001f * attackMs * static_cast<float> (sampleRate)));
     releaseCoefficient = std::exp (-1.0f / (0.001f * releaseMs * static_cast<float> (sampleRate)));
 }
@@ -50,13 +53,14 @@ float Dynamics::updateGain (State& state, float magnitude) noexcept
     state.envelope = detectorCoefficient * state.envelope + (1.0f - detectorCoefficient) * magnitude;
 
     auto targetGain = 1.0f;
+    /* Above threshold the gain is 10^((out - in) / 20 dB), and out - in
+       reduces to (threshold - in)(1 - 1/ratio), so the gain is
+       (threshold / envelope)^(1 - 1/ratio): one log and one exp in base 2,
+       with the threshold's log held from setParameters. It was two log10s
+       (one of a constant) and a pow per sample, in five compressors at the
+       oversampled rate. FastMath's versions hold the gain to ~0.0001 dB. */
     if (state.envelope > threshold)
-    {
-        const auto inputDb = juce::Decibels::gainToDecibels (state.envelope, -120.0f);
-        const auto thresholdDb = juce::Decibels::gainToDecibels (threshold, -120.0f);
-        const auto outputDb = thresholdDb + (inputDb - thresholdDb) / ratio;
-        targetGain = juce::Decibels::decibelsToGain (outputDb - inputDb);
-    }
+        targetGain = fastmath::exp2 (slope * (log2Threshold - fastmath::log2 (state.envelope)));
     const auto gainCoefficient = targetGain < state.gain ? attackCoefficient : releaseCoefficient;
     state.gain = gainCoefficient * state.gain + (1.0f - gainCoefficient) * targetGain;
     return state.gain;

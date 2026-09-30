@@ -69,6 +69,7 @@ target_sources(VOIDWORM PRIVATE
     Source/DSP/ReactorPreEq.h
     Source/DSP/Dynamics.cpp
     Source/DSP/Dynamics.h
+    Source/DSP/FastMath.h
     Source/DSP/WeldProcessor.cpp
     Source/DSP/WeldProcessor.h
     Source/DSP/FinalLimiter.cpp
