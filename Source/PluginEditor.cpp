@@ -2444,11 +2444,10 @@ void VoidwormAudioProcessorEditor::drawEqGraph (juce::Graphics& g, juce::Rectang
             g.setColour (dimText.withAlpha (0.72f));
             g.setFont (juce::FontOptions (6.8f).withName ("Bahnschrift").withStyle ("SemiBold"));
             g.drawText ("GR", row.withTrimmedRight (row.getWidth() * 0.5f + 3.0f).toNearestInt(), juce::Justification::centredRight);
-            // Dim at 0.0 while nothing is being reduced; lit once it works.
+            // 0.0 while nothing is being reduced, never "-0.0"; brighter as it works.
             const auto working = reduction >= 0.05f;
             const auto emphasis = juce::jlimit (0.0f, 1.0f, reduction / 6.0f);
-            g.setColour (working ? crimson.interpolatedWith (ember, emphasis * 0.35f).withAlpha (0.66f + emphasis * 0.30f)
-                                 : dimText.withAlpha (0.45f));
+            g.setColour (crimson.interpolatedWith (ember, emphasis * 0.35f).withAlpha (0.58f + emphasis * 0.34f));
             g.setFont (juce::FontOptions (7.2f).withName ("Bahnschrift").withStyle ("SemiBold"));
             g.drawText ((working ? "-" + juce::String (reduction, 1) : juce::String ("0.0")) + " dB", row.withTrimmedLeft (row.getWidth() * 0.5f - 1.0f).toNearestInt(),
                         juce::Justification::centredLeft);
