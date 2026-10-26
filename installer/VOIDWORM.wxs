@@ -20,7 +20,7 @@
     <MediaTemplate EmbedCab="yes" />
 
     <Property Id="ARPCONTACT" Value="lewonn / LWNX DSP" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/lew0nn/voidworm" />
+    <Property Id="ARPHELPLINK" Value="https://lewonn.com/voidworm" />
     <Property Id="ARPPRODUCTICON" Value="VoidwormProductIcon" />
     <Icon Id="VoidwormProductIcon" SourceFile="$(var.SourceDir)\installer\assets\VOIDWORM_Installer_Icon.ico" />
 

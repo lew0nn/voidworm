@@ -26,12 +26,14 @@ VOIDWORM follows the incoming signal instead of laying the same static distortio
 
 ## Reactors
 
-- **MASS:** Fundamental weight, low-order harmonics, low-end pressure.
+- **MASS:** Fundamental weight, low-order harmonics, low-end pressure. Past the middle, SATURATION clips the lows much harder and squares them off, and HARMONICS lets that grit through.
 - **FURNACE:** Starvation, grind, fuzz, folding, hostile midrange.
 - **ARC:** Source-derived metallic/electrical intermodulation.
-- **FEEDBACK:** Short bounded nonlinear recursion and unstable texture.
+- **FEEDBACK:** Short bounded nonlinear recursion and unstable texture. Past the middle, RETURN wakes it up on short notes too, drives it harder and brings it forward.
 
-**SAW** is a final creative stage after the reactor blend. It bends the signal through a saw, square, or triangle transfer shaped by the source's own level, adding a hard harmonic edge that follows the playing. One click switches it on, right-click or scroll changes the shape, and AMT sets how much.
+At their default middle position the character controls sound exactly as before; the extra bite lives in the upper half.
+
+**SURGE** and **SAW** are two stages after the reactor blend, side by side with WELD on the MASTER page. SURGE escalates thresholds, sag, density and compression; SAW bends the signal through a saw, square, or triangle transfer shaped by the source's own level. Each has an icon to click, a lamp that lights while it is on, and its own amount. Right-click or scroll SAW's icon to change the shape.
 
 <p align="center">
   <img src="./Media/VOIDWORM_Reactor.png" width="100%" alt="VOIDWORM REACTOR workspace">
@@ -91,11 +93,11 @@ Runs VOIDWORM without a DAW and includes integrated Audio/MIDI device settings, 
 <details>
 <summary><strong>Controls & signal path</strong></summary>
 
-The input gate is stereo-linked, enabled by default, and positioned before dry capture, DRIVE, source analysis, and the reactor engine. BREACH cross-contaminates reactor paths; TEAR introduces post-reactor micro-fragment damage; ROT and OVERLOAD control nonlinear severity; SURGE escalates the engine dynamically.
+INPUT (-24 to +12 dB) sets the level into the whole plugin, dry path included; the input meter shows the level after it. The input gate is stereo-linked, enabled by default, and positioned after INPUT and before dry capture, DRIVE, source analysis, and the reactor engine. BREACH cross-contaminates reactor paths; TEAR introduces post-reactor micro-fragment damage; ROT and OVERLOAD control nonlinear severity; SURGE escalates the engine dynamically, by as much as its amount sets.
 
 Each reactor has independent amount, on/off, Solo, high-pass and low-pass boundaries, two focus bands, and path-specific character controls. WELD is the artistic nonlinear stage after recombination. SAW follows the dry/wet mix and runs at about 400 kHz internally whatever the oversampling factor, so its shapes stay clean; its latency is constant and reported whether it is on or off. LOW, MID, HIGH, RANGE, and OUTPUT shape the master signal before the dedicated final limiter.
 
-MIX uses a latency-aligned dry path. Oversampling supports 1X, 2X, 4X, and 8X with a separate HQ processing mode.
+MIX uses a latency-aligned dry path and a straight crossfade with an even taper: half the knob is half the change, with no loudness bump in the middle. Sessions and presets saved before 1.2.0 convert on load and keep their exact dry/wet balance. Oversampling supports 1X, 2X, 4X, and 8X with a separate HQ processing mode.
 
 </details>
 
@@ -133,7 +135,7 @@ raising or lowering it is a global choice that survives preset changes.
 <details>
 <summary><strong>Presets, themes & state</strong></summary>
 
-User presets support Save, Load, Overwrite, Rename, Delete, and Search. They are stored as versioned `.voidwormpreset` files under the user's application-data directory, and include SAW; presets saved before 1.2.0 load with SAW off. Factory presets switch SAW off.
+User presets support Save, Load, Overwrite, Rename, Delete, and Search. They are stored as versioned `.voidwormpreset` files under the user's application-data directory, and include SAW, SURGE's amount and INPUT; presets saved before 1.2.0 load with SAW off, SURGE at full amount and INPUT at 0 dB. Factory presets switch SAW off.
 
 The twelve faceplates are UV STEEL, HELLFORGE STEEL, KRYPT CYAN, XENO ACID, VOID AMBER, TOXIC BRASS, PLASMA BLUE, NUCLEAR LIME, BLOOD COPPER, ASHEN GOLD, GLACIER TEAL, and RUPTURE RED. UV STEEL is the default.
 
