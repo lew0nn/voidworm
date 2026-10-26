@@ -22,7 +22,7 @@ struct EditorLayout
     float primaryKnobY = 85.0f;
     float secondaryLabelY = 259.0f;
     float secondaryControlY = 280.0f;
-    float masterLabelY = 411.0f;
+    float masterLabelY = 417.0f;
     float groupTitleY = 397.0f;
     float contextLabelY = 405.0f;
     float masterLabelHeight = 12.0f;
@@ -46,22 +46,24 @@ struct EditorLayout
         { 538.0f, 280.0f, 68.0f, 52.0f }
     }};
 
-    // MASTER strip. Group names have their own line on top (WELD GR and LIMIT
-    // GR share FINAL STAGE's), so the controls below get the full width.
-    // POST REACTOR holds three even cells: WELD, then SURGE and SAW, each an
-    // icon (click to switch) and its AMT, all knobs on one centre line.
-    juce::Rectangle<float> masterControls { 12.0f, 393.0f, 684.0f, 84.0f };
+    // MASTER strip: group names on their own line, then one name per control,
+    // the controls on one centre line, and each gain-reduction reading right
+    // under what it measures. POST REACTOR is three even cells -- WELD, then
+    // SURGE and SAW, each an icon to click and its amount; FINAL STAGE keeps
+    // LIMIT, CEILING and the LIMITER close together.
+    juce::Rectangle<float> masterControls { 12.0f, 393.0f, 684.0f, 96.0f };
     float postGroupWidth = 306.0f;
-    juce::Rectangle<float> weld { 40.0f, 422.0f, 42.0f, 39.0f };
-    juce::Rectangle<float> surgeButton { 112.0f, 422.0f, 38.0f, 38.0f };
-    juce::Rectangle<float> surgeAmount { 157.0f, 422.0f, 42.0f, 39.0f };
-    juce::Rectangle<float> sawButton { 217.0f, 422.0f, 38.0f, 38.0f };
-    juce::Rectangle<float> sawAmount { 262.0f, 422.0f, 42.0f, 39.0f };
-    float stageGlyphCentreY = 441.0f;
+    juce::Rectangle<float> weld { 40.0f, 430.0f, 42.0f, 39.0f };
+    juce::Rectangle<float> surgeButton { 114.0f, 431.0f, 38.0f, 38.0f };
+    juce::Rectangle<float> surgeAmount { 157.0f, 430.0f, 42.0f, 39.0f };
+    juce::Rectangle<float> sawButton { 219.0f, 431.0f, 38.0f, 38.0f };
+    juce::Rectangle<float> sawAmount { 262.0f, 430.0f, 42.0f, 39.0f };
+    float stageGlyphCentreY = 450.0f;
     std::array<float, 2> stageDividers { 104.0f, 209.0f };
-    juce::Rectangle<float> limiterThreshold { 372.0f, 422.0f, 42.0f, 39.0f };
-    juce::Rectangle<float> limiterCeiling { 452.0f, 422.0f, 42.0f, 39.0f };
-    juce::Rectangle<float> limiter { 534.0f, 421.0f, 102.0f, 40.0f };
+    juce::Rectangle<float> limiterThreshold { 404.0f, 430.0f, 42.0f, 39.0f };
+    juce::Rectangle<float> limiterCeiling { 474.0f, 430.0f, 42.0f, 39.0f };
+    juce::Rectangle<float> limiter { 535.0f, 429.0f, 102.0f, 40.0f };
+    float gainReductionY = 473.0f;
     juce::Rectangle<float> postReactorLabel { 16.0f, 405.0f, 74.0f, 10.0f };
     juce::Rectangle<float> finalLabel { 217.0f, 405.0f, 54.0f, 10.0f };
 
