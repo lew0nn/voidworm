@@ -38,7 +38,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createVoidwormParameterLayou
     layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "overload", 1 }, "OVERLOAD",
         juce::NormalisableRange<float> { 0.0f, 1.0f, 0.0001f }, 0.35f, juce::AudioParameterFloatAttributes().withStringFromValueFunction (percent).withValueFromStringFunction (parsePercent)));
     layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "mix", 1 }, "MIX",
-        juce::NormalisableRange<float> { 0.0f, 1.0f, 0.0001f }, Parameters {}.mix, juce::AudioParameterFloatAttributes().withStringFromValueFunction (percent).withValueFromStringFunction (parsePercent)));
+        juce::NormalisableRange<float> { 0.0f, 1.0f, 0.0001f }, voidworm::Parameters {}.mix, juce::AudioParameterFloatAttributes().withStringFromValueFunction (percent).withValueFromStringFunction (parsePercent)));
     layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "range", 1 }, "RANGE",
         juce::NormalisableRange<float> { 0.0f, 1.0f, 0.0001f }, 0.92f, juce::AudioParameterFloatAttributes().withStringFromValueFunction (percent).withValueFromStringFunction (parsePercent)));
     layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "low", 1 }, "LOW",
