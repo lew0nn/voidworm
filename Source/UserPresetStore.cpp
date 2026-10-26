@@ -45,6 +45,7 @@ bool validSound (const Parameters& p) noexcept
         return false;
     if (! std::all_of (p.reactorAmounts.begin(), p.reactorAmounts.end(), [] (float value)
         { return finite (value) && value >= 0.0f && value <= 1.0f; })) return false;
+    if (! finite (p.surgeAmount) || p.surgeAmount < 0.0f || p.surgeAmount > 1.0f) return false;
     if (! finite (p.sawAmount) || p.sawAmount < 0.0f || p.sawAmount > 1.0f
         || p.sawWaveform < 0 || p.sawWaveform > 2) return false;
     return validEq (p.massEq) && validEq (p.furnaceEq) && validEq (p.arcEq) && validEq (p.feedbackEq);
@@ -156,6 +157,7 @@ juce::ValueTree UserPresetStore::makeTree (const juce::String& name, const Param
     sound.setProperty ("sawAmount", p.sawAmount, nullptr);
     sound.setProperty ("sawWave", p.sawWaveform, nullptr);
     sound.setProperty ("input", p.inputDb, nullptr);
+    sound.setProperty ("surgeAmount", p.surgeAmount, nullptr);
     constexpr std::array<const char*, 4> paths { "mass", "furnace", "arc", "feedback" };
     for (size_t i = 0; i < paths.size(); ++i)
     {
@@ -214,6 +216,7 @@ bool UserPresetStore::readTree (const juce::ValueTree& root, UserPreset& result,
     p.sawWaveform = sound.hasProperty ("sawWave") ? static_cast<int> (sound["sawWave"]) : 0;
     // INPUT came later still; a preset without it plays at 0 dB, as it was made.
     p.inputDb = sound.hasProperty ("input") ? static_cast<float> (sound["input"]) : 0.0f;
+    p.surgeAmount = sound.hasProperty ("surgeAmount") ? static_cast<float> (sound["surgeAmount"]) : 1.0f;
     constexpr std::array<const char*, 4> paths { "mass", "furnace", "arc", "feedback" };
     for (size_t i = 0; i < paths.size(); ++i)
     {
@@ -316,7 +319,7 @@ bool UserPresetStore::soundStatesEqual (const Parameters& a, const Parameters& b
         || ! same (a.limiterCeilingDb,b.limiterCeilingDb) || a.reactorEnabled != b.reactorEnabled) return false;
     if (a.gateEnabled != b.gateEnabled || ! same (a.gateThresholdDb, b.gateThresholdDb)) return false;
     if (a.sawEnabled != b.sawEnabled || a.sawWaveform != b.sawWaveform || ! same (a.sawAmount, b.sawAmount)) return false;
-    if (! same (a.inputDb, b.inputDb)) return false;
+    if (! same (a.inputDb, b.inputDb) || ! same (a.surgeAmount, b.surgeAmount)) return false;
     for (size_t i=0;i<4;++i) if (! same (a.reactorAmounts[i],b.reactorAmounts[i])) return false;
     const std::array<float,8> ac { a.reactorCharacter.massSaturation,a.reactorCharacter.massHarmonics,a.reactorCharacter.furnaceStarve,a.reactorCharacter.furnaceFold,a.reactorCharacter.arcXmod,a.reactorCharacter.arcFold,a.reactorCharacter.feedbackReturn,a.reactorCharacter.feedbackDamp };
     const std::array<float,8> bc { b.reactorCharacter.massSaturation,b.reactorCharacter.massHarmonics,b.reactorCharacter.furnaceStarve,b.reactorCharacter.furnaceFold,b.reactorCharacter.arcXmod,b.reactorCharacter.arcFold,b.reactorCharacter.feedbackReturn,b.reactorCharacter.feedbackDamp };

@@ -173,8 +173,7 @@ void VoidLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int wid
     // Compact knobs are picked by name. A knob left out of this list gets the
     // full size rings and shadows drawn into a small rect, which reads as a
     // bulging ellipse rather than a ring that hugs the cap.
-    const auto isMini = slider.getName() == "DRIVE" || slider.getName() == "GATE THRESHOLD"
-                     || slider.getName() == "SAW";
+    const auto isMini = slider.getName() == "DRIVE" || slider.getName() == "GATE THRESHOLD";
     const auto radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) * (isOverload ? 0.388f : isMini ? 0.30f : 0.345f);
     const auto centre = bounds.getCentre();
     const auto angle = start + sliderPos * (end - start);

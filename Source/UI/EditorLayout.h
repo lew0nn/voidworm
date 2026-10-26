@@ -21,9 +21,9 @@ struct EditorLayout
     float overloadVisibleRingTop = 88.0f;
     float primaryKnobY = 85.0f;
     float secondaryLabelY = 259.0f;
-    float surgeLabelY = 185.0f;
     float secondaryControlY = 280.0f;
-    float masterLabelY = 404.0f;
+    float masterLabelY = 411.0f;
+    float groupTitleY = 397.0f;
     float contextLabelY = 405.0f;
     float masterLabelHeight = 12.0f;
     float contextLabelHeight = 10.0f;
@@ -37,19 +37,7 @@ struct EditorLayout
     juce::Rectangle<float> rot { 433.0f, 85.0f, 84.0f, 92.0f };
     juce::Rectangle<float> drive { 460.0f, 197.0f, 30.0f, 28.0f };
     juce::Rectangle<float> mix { 517.0f, 85.0f, 84.0f, 92.0f };
-    // SURGE sits under MIX in the primary panel's free band, beside DRIVE, so
-    // the bottom row can run INPUT to OUTPUT.
-    juce::Rectangle<float> surge { 516.0f, 199.0f, 86.0f, 32.0f };
 
-    // SAW is a post-reactor stage, but its module sits in the primary panel's
-    // free band so it stays visible on both lower-workspace pages. Geometry
-    // mirrors the GATE module exactly: 65x35 chassis, 27-wide glyph button,
-    // 25px knob offset by (36, 9). It clears the BREACH/TEAR value readouts
-    // above (y182..197) and the OVERLOAD knob to its right (from x289).
-    juce::Rectangle<float> sawModule { 156.0f, 199.0f, 65.0f, 35.0f };
-    juce::Rectangle<float> sawButton { 158.0f, 201.0f, 27.0f, 32.0f };
-    juce::Rectangle<float> sawAmount { 192.0f, 208.0f, 25.0f, 23.0f };
-    float sawGlyphCentreY = 220.5f;
     // INPUT opens the bottom row and OUTPUT closes it: six knobs on an 87 px pitch.
     juce::Rectangle<float> input { 103.0f, 280.0f, 68.0f, 52.0f };
     std::array<juce::Rectangle<float>, 5> secondaryKnobs {{
@@ -58,11 +46,22 @@ struct EditorLayout
         { 538.0f, 280.0f, 68.0f, 52.0f }
     }};
 
-    juce::Rectangle<float> masterControls { 12.0f, 393.0f, 684.0f, 66.0f };
-    juce::Rectangle<float> weld { 94.0f, 417.0f, 42.0f, 39.0f };
-    juce::Rectangle<float> limiterThreshold { 282.0f, 417.0f, 42.0f, 39.0f };
-    juce::Rectangle<float> limiterCeiling { 382.0f, 417.0f, 42.0f, 39.0f };
-    juce::Rectangle<float> limiter { 433.0f, 415.0f, 102.0f, 40.0f };
+    // MASTER strip. Group names have their own line on top (WELD GR and LIMIT
+    // GR share FINAL STAGE's), so the controls below get the full width.
+    // POST REACTOR holds three even cells: WELD, then SURGE and SAW, each an
+    // icon (click to switch) and its AMT, all knobs on one centre line.
+    juce::Rectangle<float> masterControls { 12.0f, 393.0f, 684.0f, 84.0f };
+    float postGroupWidth = 306.0f;
+    juce::Rectangle<float> weld { 40.0f, 422.0f, 42.0f, 39.0f };
+    juce::Rectangle<float> surgeButton { 112.0f, 422.0f, 38.0f, 38.0f };
+    juce::Rectangle<float> surgeAmount { 157.0f, 422.0f, 42.0f, 39.0f };
+    juce::Rectangle<float> sawButton { 217.0f, 422.0f, 38.0f, 38.0f };
+    juce::Rectangle<float> sawAmount { 262.0f, 422.0f, 42.0f, 39.0f };
+    float stageGlyphCentreY = 441.0f;
+    std::array<float, 2> stageDividers { 104.0f, 209.0f };
+    juce::Rectangle<float> limiterThreshold { 372.0f, 422.0f, 42.0f, 39.0f };
+    juce::Rectangle<float> limiterCeiling { 452.0f, 422.0f, 42.0f, 39.0f };
+    juce::Rectangle<float> limiter { 534.0f, 421.0f, 102.0f, 40.0f };
     juce::Rectangle<float> postReactorLabel { 16.0f, 405.0f, 74.0f, 10.0f };
     juce::Rectangle<float> finalLabel { 217.0f, 405.0f, 54.0f, 10.0f };
 

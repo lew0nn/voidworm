@@ -170,5 +170,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createVoidwormParameterLayou
     // Last, so every earlier parameter keeps its place for hosts and sessions.
     layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "input", 1 }, "INPUT",
         juce::NormalisableRange<float> { -24.0f, 12.0f, 0.01f }, 0.0f, juce::AudioParameterFloatAttributes().withLabel ("dB")));
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "surgeAmount", 1 }, "SURGE AMOUNT",
+        juce::NormalisableRange<float> { 0.0f, 1.0f, 0.0001f }, 1.0f, amountAttributes));
     return layout;
 }

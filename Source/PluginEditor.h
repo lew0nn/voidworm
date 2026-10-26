@@ -162,6 +162,7 @@ private:
     void updateMeterDisplays() noexcept;
     void configureSlider (TouchSlider&, const juce::String& name, juce::Label&);
     void drawMeter (juce::Graphics&, juce::Rectangle<float>, bool inputMeter);
+    void drawStages (juce::Graphics&);
     void drawEqGraph (juce::Graphics&, juce::Rectangle<float>);
     void drawTransientValue (juce::Graphics&);
     void drawSteelTexture (juce::Graphics&, juce::Rectangle<float>, int density);
@@ -234,13 +235,14 @@ private:
     TouchSlider weld, limiterThreshold, limiterCeiling;
     TouchSlider reactorAmount, reactorCharacterA, reactorCharacterB;
     TouchSlider sawAmount;
-    AnimatedToggleButton surgeSwitch;
+    TouchSlider surgeAmount;
     AnimatedToggleButton limiterSwitch;
     HotspotButton previousPresetButton { "Previous preset" };
     HotspotButton nextPresetButton { "Next preset" };
     HotspotButton presetMenuButton { "Preset menu" };
     HotspotButton gateButton { "Input noise gate" };
     HotspotButton sawButton { "Saw stage" };
+    HotspotButton surgeButton { "Surge" };
     HotspotButton gridButton { "Preset library" };
     HotspotButton searchButton { "Preset search" };
     HotspotButton settingsButton { "Engine settings" };
@@ -252,15 +254,15 @@ private:
     StandaloneToast standaloneToast { *this };
     voidworm::UserPresetStore userPresets;
     juce::ApplicationProperties applicationProperties;
-    juce::Label breachLabel, tearLabel, overloadLabel, rotLabel, driveLabel, mixLabel, surgeLabel, gateThresholdLabel;
+    juce::Label breachLabel, tearLabel, overloadLabel, rotLabel, driveLabel, mixLabel, gateThresholdLabel;
     juce::Label lowLabel, midLabel, highLabel, rangeLabel, outputLabel, inputLabel;
     juce::Label weldLabel, limiterThresholdLabel, limiterCeilingLabel, limiterSwitchLabel;
-    juce::Label sawAmountLabel;
+    juce::Label sawAmountLabel, surgeAmountLabel;
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
     std::unique_ptr<Attachment> breachAttachment, tearAttachment, overloadAttachment, rotAttachment, driveAttachment,
                                 mixAttachment, gateThresholdAttachment;
-    std::unique_ptr<ButtonAttachment> surgeAttachment;
+    std::unique_ptr<Attachment> surgeAmountAttachment;
     std::unique_ptr<Attachment> lowAttachment, midAttachment, highAttachment;
     std::unique_ptr<Attachment> rangeAttachment, outputAttachment, inputAttachment;
     std::unique_ptr<Attachment> weldAttachment, limiterThresholdAttachment, limiterCeilingAttachment;

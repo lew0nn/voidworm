@@ -37,6 +37,7 @@ struct Parameters
     bool gateEnabled = true;
     float gateThresholdDb = -50.0f;
     bool surge = false;
+    float surgeAmount = 1.0f;
     int oversampleFactor = 1;
     bool hqMode = false;
     std::array<bool, 4> reactorEnabled { true, true, true, true };

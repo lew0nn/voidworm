@@ -182,7 +182,9 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
     const auto limiterThreshold = finiteClamped (p.limiterThresholdDb, -18.0f, 0.0f, -3.0f);
     const auto limiterCeiling = finiteClamped (p.limiterCeilingDb, -6.0f, 0.0f, -0.8f);
     const auto gateThreshold = finiteClamped (p.gateThresholdDb, -80.0f, -20.0f, -50.0f);
-    const auto surge = p.surge ? 1.0f : 0.0f;
+    // SURGE AMOUNT scales how far SURGE escalates; at 100% it is the on/off
+    // SURGE it always was.
+    const auto surge = p.surge ? finiteClamped (p.surgeAmount, 0.0f, 1.0f, 1.0f) : 0.0f;
     sawProcessor.setParameters (p.sawEnabled, p.sawAmount,
                                 static_cast<SawProcessor::Waveform> (juce::jlimit (0, 2, p.sawWaveform)),
                                 ! targetsInitialised);

@@ -43,6 +43,7 @@ void VoidwormAudioProcessor::cacheParameterHandles()
     handles.hqMode = resolve ("hqMode");
     handles.sawEnabled = resolve ("sawEnabled");
     handles.sawAmount = resolve ("sawAmount");
+    handles.surgeAmount = resolve ("surgeAmount");
     handles.sawWave = resolve ("sawWave");
     constexpr std::array<const char*, 4> enabledIds {
         "massEnabled", "furnaceEnabled", "arcEnabled", "feedbackEnabled" };
@@ -164,6 +165,7 @@ voidworm::Parameters VoidwormAudioProcessor::captureParameterSnapshot() noexcept
     p.hqMode = handles.hqMode->load() >= 0.5f;
     p.sawEnabled = handles.sawEnabled->load() >= 0.5f;
     p.sawAmount = handles.sawAmount->load();
+    p.surgeAmount = handles.surgeAmount->load();
     p.sawWaveform = juce::jlimit (0, 2, juce::roundToInt (handles.sawWave->load()));
     for (size_t index = 0; index < p.reactorEnabled.size(); ++index)
     {

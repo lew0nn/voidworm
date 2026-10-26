@@ -115,7 +115,7 @@ LowerWorkspaceLayout makeLowerWorkspaceLayout (juce::Rectangle<float> area) noex
     layout.limiterThresholdSlider = editorLayout.limiterThreshold;
     layout.limiterCeilingSlider = editorLayout.limiterCeiling;
     layout.limiterEnabled = editorLayout.limiter;
-    layout.gainReduction = { layout.masterControls.getRight() - 157.0f, layout.masterControls.getY() + 16.0f, 150.0f, 42.0f };
+    layout.gainReduction = { layout.masterControls.getRight() - 262.0f, layout.masterControls.getY() + 2.0f, 254.0f, 13.0f };
 
     auto reactorTabs = reactorInner.removeFromTop (31.0f);
     const auto reactorWidth = reactorTabs.getWidth() / 4.0f;
@@ -1491,7 +1491,7 @@ bool VoidwormAudioProcessorEditor::OverlayPanel::keyPressed (const juce::KeyPres
 }
 
 VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcessor& p)
-    : AudioProcessorEditor (&p), processor (p), surgeSwitch (*this, "SURGE"),
+    : AudioProcessorEditor (&p), processor (p),
       limiterSwitch (*this, "LIMITER"), hqButton (*this, "HQ MODE"), overlay (*this)
 {
     processor.setReactorSoloTarget (0);
@@ -1526,15 +1526,11 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     sawAmount.setMouseDragSensitivity (140);
     sawAmount.setTooltip ("SAW amount - drag vertically");
     sawAmountLabel.setText ("AMT", juce::dontSendNotification);
-    surgeLabel.setText ("SURGE", juce::dontSendNotification);
-    surgeLabel.setJustificationType (juce::Justification::centred);
-    surgeLabel.setColour (juce::Label::textColourId, defaultWarmWhite);
-    surgeSwitch.setClickingTogglesState (true);
-    surgeSwitch.setTooltip ("Smoothly escalates reactor thresholds, sag, density and compression");
-    addAndMakeVisible (surgeLabel);
-    addAndMakeVisible (surgeSwitch);
+    configureSlider (surgeAmount, "SURGE", surgeAmountLabel);
+    surgeAmount.setTooltip ("SURGE amount - drag vertically");
+    surgeAmountLabel.setText ("AMT", juce::dontSendNotification);
 
-    for (auto* button : { &previousPresetButton, &nextPresetButton, &presetMenuButton, &gateButton, &sawButton,
+    for (auto* button : { &previousPresetButton, &nextPresetButton, &presetMenuButton, &gateButton, &sawButton, &surgeButton,
                           &gridButton, &searchButton, &settingsButton, &minimiseButton, &closeButton,
                           &oversampleButton })
     {
@@ -1547,6 +1543,8 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     gateButton.onClick = [this] { toggleParameter ("gateEnabled"); };
     gateButton.setTooltip ("Input gate - click to enable/disable");
     sawButton.onClick = [this] { toggleParameter ("sawEnabled"); };
+    surgeButton.onClick = [this] { toggleParameter ("surge"); };
+    surgeButton.setTooltip ("Surge - click to enable/disable; escalates reactor thresholds, sag, density and compression");
     sawButton.onContextClick = [this] { cycleSawWaveform(); };
     sawButton.onScroll = [this] (int direction) { cycleSawWaveform (direction); };
     sawButton.setTooltip ("Saw stage - click to enable/disable, scroll or right-click to change waveform");
@@ -1615,7 +1613,7 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     gateThresholdAttachment = std::make_unique<Attachment> (processor.parameters, "gateThreshold", gateThreshold);
     mixAttachment = std::make_unique<Attachment> (processor.parameters, "mix", mix);
     sawAmountAttachment = std::make_unique<Attachment> (processor.parameters, "sawAmount", sawAmount);
-    surgeAttachment = std::make_unique<ButtonAttachment> (processor.parameters, "surge", surgeSwitch);
+    surgeAmountAttachment = std::make_unique<Attachment> (processor.parameters, "surgeAmount", surgeAmount);
     lowAttachment = std::make_unique<Attachment> (processor.parameters, "low", low);
     midAttachment = std::make_unique<Attachment> (processor.parameters, "mid", mid);
     highAttachment = std::make_unique<Attachment> (processor.parameters, "high", high);
@@ -1627,7 +1625,7 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     limiterCeilingAttachment = std::make_unique<Attachment> (processor.parameters, "limiterCeiling", limiterCeiling);
     limiterSwitchAttachment = std::make_unique<ButtonAttachment> (processor.parameters, "limiterEnabled", limiterSwitch);
     hqButton.setActive (processor.parameters.getRawParameterValue ("hqMode")->load() >= 0.5f);
-    surgeSwitch.snapToState(); limiterSwitch.snapToState();
+    limiterSwitch.snapToState();
     // The host may restore a session state before constructing the editor. Treat
     // that actual musical state as clean until the user changes a sound control.
     cleanPresetSound = processor.captureParameterSnapshot();
@@ -1806,15 +1804,14 @@ void VoidwormAudioProcessorEditor::setTheme (int index)
     setParameterActual (processor.parameters, "theme", static_cast<float> (juce::jlimit (0, voidworm::ui::themeCount - 1, index)));
     lookAndFeel.setThemeStyle (currentThemeStyle());
     const auto text = themeText();
-    for (auto* label : { &breachLabel, &tearLabel, &overloadLabel, &rotLabel, &driveLabel, &mixLabel, &surgeLabel,
-                         &gateThresholdLabel, &sawAmountLabel,
+    for (auto* label : { &breachLabel, &tearLabel, &overloadLabel, &rotLabel, &driveLabel, &mixLabel,
+                         &gateThresholdLabel, &sawAmountLabel, &surgeAmountLabel,
                          &lowLabel, &midLabel, &highLabel, &rangeLabel, &outputLabel, &inputLabel })
         label->setColour (juce::Label::textColourId, text);
-    for (auto* slider : { &breach, &tear, &overload, &rot, &drive, &mix, &gateThreshold, &sawAmount,
+    for (auto* slider : { &breach, &tear, &overload, &rot, &drive, &mix, &gateThreshold, &sawAmount, &surgeAmount,
                           &low, &mid, &high, &range, &output, &input,
                           &reactorAmount, &reactorCharacterA, &reactorCharacterB })
         slider->repaint();
-    surgeSwitch.repaint();
     repaint();
     overlay.refreshTheme();
     overlay.repaint();
@@ -2035,101 +2032,9 @@ void VoidwormAudioProcessorEditor::paint (juce::Graphics& g)
     g.setColour (gateMuting ? warmWhite.withAlpha (0.82f) : uiStyle::utilityEdge.withAlpha (0.72f));
     g.drawEllipse (gateLamp, 0.65f);
 
-    // SAW is a post-reactor stage, but a compact module in the primary panel's
-    // free band keeps it reachable on both lower-workspace pages. The chassis
-    // deliberately copies the GATE module so the two read as one family.
-    const auto sawModule = editorLayout.sawModule;
-    g.setColour (juce::Colour (0xff100f0e).withAlpha (0.62f));
-    g.fillRoundedRectangle (sawModule, 3.0f);
-    g.setColour (uiStyle::utilityEdge.withAlpha (0.34f));
-    g.drawRoundedRectangle (sawModule, 3.0f, 0.55f);
-
-    const auto sawEnabled = processor.parameters.getRawParameterValue ("sawEnabled")->load() >= 0.5f;
-    const auto sawSetting = juce::jlimit (0.0f, 1.0f,
-        processor.parameters.getRawParameterValue ("sawAmount")->load());
-    // Lamp heat is a pure UI reading of the two parameters, so the amount knob
-    // stays legible before the stage itself reports anything back.
-    const auto sawHeat = sawEnabled ? sawSetting : 0.0f;
-    const auto sawOver = sawButton.isMouseOver();
-    const auto sawCentreX = editorLayout.sawButton.getCentreX();
-    const auto sawCentreY = editorLayout.sawGlyphCentreY;
-    g.setColour (sawOver ? warmWhite.withAlpha (0.82f) : dimText.withAlpha (0.78f));
-    g.setFont (juce::FontOptions (5.8f).withName ("Bahnschrift").withStyle ("SemiBold"));
-    const auto sawWave = juce::jlimit (0, 2,
-        juce::roundToInt (processor.parameters.getRawParameterValue ("sawWave")->load()));
-    const std::array<const char*, 3> sawWaveNames { "SAW", "SQR", "TRI" };
-    g.drawText (sawWaveNames[static_cast<size_t> (sawWave)],
-                juce::Rectangle<float> (sawModule.getX() + 1.0f, sawModule.getY() + 2.0f,
-                                        29.0f, 8.0f).toNearestInt(),
-                juce::Justification::centred);
-    if (sawOver)
-    {
-        g.setColour (juce::Colours::white.withAlpha (0.025f));
-        g.fillRoundedRectangle (editorLayout.sawButton.reduced (2.0f), 4.0f);
-    }
-    const auto sawColour = sawEnabled ? crimson.interpolatedWith (ember, sawHeat * 0.60f).withAlpha (0.86f)
-                                      : dimText.withAlpha (sawOver ? 0.72f : 0.48f);
-    if (sawHeat > 0.04f)
-    {
-        g.setColour (ember.withAlpha (0.10f * sawHeat));
-        g.fillEllipse (sawCentreX - 8.0f, sawCentreY - 8.0f, 16.0f, 16.0f);
-    }
-    g.setColour (sawColour);
-    constexpr auto sawSpan = 6.5f;
-    constexpr auto sawRise = 4.0f;
-    constexpr auto sawTooth = (sawSpan * 2.0f) / 3.0f;
-    juce::Path sawGlyph;
-    if (sawWave == 1)
-    {
-        // Square: alternating levels with vertical transitions.
-        const auto step = (sawSpan * 2.0f) / 4.0f;
-        sawGlyph.startNewSubPath (sawCentreX - sawSpan, sawCentreY + sawRise);
-        for (int edge = 0; edge < 4; ++edge)
-        {
-            const auto x = sawCentreX - sawSpan + static_cast<float> (edge) * step;
-            const auto level = edge % 2 == 0 ? sawCentreY - sawRise : sawCentreY + sawRise;
-            sawGlyph.lineTo (x, level);
-            sawGlyph.lineTo (x + step, level);
-        }
-    }
-    else if (sawWave == 2)
-    {
-        // Triangle: symmetric rise and fall, no vertical edges.
-        const auto step = (sawSpan * 2.0f) / 4.0f;
-        sawGlyph.startNewSubPath (sawCentreX - sawSpan, sawCentreY + sawRise);
-        for (int edge = 0; edge < 4; ++edge)
-        {
-            const auto x = sawCentreX - sawSpan + static_cast<float> (edge) * step;
-            sawGlyph.lineTo (x + step, edge % 2 == 0 ? sawCentreY - sawRise : sawCentreY + sawRise);
-        }
-    }
-    else
-    {
-        sawGlyph.startNewSubPath (sawCentreX - sawSpan, sawCentreY + sawRise);
-        for (int tooth = 0; tooth < 3; ++tooth)
-        {
-            const auto x = sawCentreX - sawSpan + static_cast<float> (tooth) * sawTooth;
-            sawGlyph.lineTo (x + sawTooth, sawCentreY - sawRise);
-            if (tooth < 2)
-                sawGlyph.lineTo (x + sawTooth, sawCentreY + sawRise);
-        }
-    }
-    g.strokePath (sawGlyph, juce::PathStrokeType (1.1f, juce::PathStrokeType::curved,
-                                                  juce::PathStrokeType::rounded));
-    const auto sawLamp = juce::Rectangle<float> (sawCentreX + 7.6f, sawCentreY - 8.4f, 3.6f, 3.6f);
-    if (sawHeat > 0.04f)
-    {
-        g.setColour (ember.withAlpha (0.22f * sawHeat));
-        g.fillEllipse (sawLamp.expanded (2.5f));
-    }
-    g.setColour (sawEnabled ? crimson.interpolatedWith (ember, sawHeat).withAlpha (0.45f + 0.48f * sawHeat)
-                            : juce::Colour (0xff171513));
-    g.fillEllipse (sawLamp);
-    g.setColour (sawEnabled && sawHeat > 0.04f ? warmWhite.withAlpha (0.72f)
-                                               : uiStyle::utilityEdge.withAlpha (0.72f));
-    g.drawEllipse (sawLamp, 0.65f);
-
     drawEqGraph (g, editorLayout.lowerWorkspace);
+    if (! reactorWorkspace.isReactorPage())
+        drawStages (g);
 
     const auto footer = editorLayout.footer;
     juce::ColourGradient footerGradient (juce::Colour (0xff171412), footer.getX(), footer.getY(),
@@ -2205,6 +2110,115 @@ void VoidwormAudioProcessorEditor::paint (juce::Graphics& g)
     g.setFont (juce::FontOptions (10.0f).withName ("Bahnschrift").withStyle ("Light"));
     g.setColour (warmWhite.withAlpha (0.78f));
     drawTransientValue (g);
+}
+
+void VoidwormAudioProcessorEditor::drawStages (juce::Graphics& g)
+{
+    // SURGE and SAW, two post-reactor stages drawn exactly alike beside WELD:
+    // the name, an icon to click with a lamp at its corner, and the AMT knob.
+    // The icon and lamp take their brightness from the stage's AMT.
+    const auto crimson = primaryAccent();
+    const auto ember = secondaryAccent();
+    const auto warmWhite = themeText();
+    const auto dimText = themeDimText();
+    constexpr auto k = 1.4f;   // the glyphs' scale against the old compact module
+
+    g.setColour (uiStyle::utilityEdge.withAlpha (0.45f));
+    for (const auto x : editorLayout.stageDividers)
+        g.drawVerticalLine (juce::roundToInt (x), editorLayout.masterLabelY + 1.0f, editorLayout.masterLabelY + 50.0f);
+
+    const auto drawStage = [&] (const juce::Rectangle<float>& area, const juce::String& name, bool enabled, float amount,
+                                bool over, const std::function<void (float, float)>& glyph)
+    {
+        const auto heat = enabled ? juce::jlimit (0.0f, 1.0f, amount) : 0.0f;
+        const auto cx = area.getCentreX(), cy = editorLayout.stageGlyphCentreY;
+        g.setColour (over ? warmWhite.withAlpha (0.82f) : dimText.withAlpha (0.78f));
+        g.setFont (juce::FontOptions (8.0f).withName ("Bahnschrift").withStyle ("SemiBold"));
+        g.drawText (name, juce::Rectangle<float> (area.getX() - 6.0f, editorLayout.masterLabelY, area.getWidth() + 12.0f,
+                                                  editorLayout.masterLabelHeight).toNearestInt(),
+                    juce::Justification::centred);
+        if (over)
+        {
+            g.setColour (juce::Colours::white.withAlpha (0.025f));
+            g.fillRoundedRectangle (area.reduced (2.0f), 4.0f);
+        }
+        g.setColour (enabled ? crimson.interpolatedWith (ember, heat * 0.60f).withAlpha (0.86f)
+                             : dimText.withAlpha (over ? 0.72f : 0.48f));
+        glyph (cx, cy);
+        const auto lamp = juce::Rectangle<float> (cx + 7.6f * k, cy - 8.4f * k, 3.6f * k, 3.6f * k);
+        if (heat > 0.04f)
+        {
+            g.setColour (ember.withAlpha (0.22f * heat));
+            g.fillEllipse (lamp.expanded (2.5f));
+        }
+        g.setColour (enabled ? crimson.interpolatedWith (ember, heat).withAlpha (0.45f + 0.48f * heat)
+                             : juce::Colour (0xff171513));
+        g.fillEllipse (lamp);
+        g.setColour (enabled && heat > 0.04f ? warmWhite.withAlpha (0.72f) : uiStyle::utilityEdge.withAlpha (0.72f));
+        g.drawEllipse (lamp, 0.65f);
+    };
+
+    const auto load = [this] (const char* id) { return processor.parameters.getRawParameterValue (id)->load(); };
+
+    // SURGE: a lightning bolt, slanted and solid in both states.
+    drawStage (editorLayout.surgeButton, "SURGE", load ("surge") >= 0.5f, load ("surgeAmount"), surgeButton.isMouseOver(),
+               [&g] (float cx, float cy)
+               {
+                   const auto h = 9.0f, w = 6.2f;
+                   juce::Path bolt;
+                   bolt.startNewSubPath (cx + 0.30f * w, cy - h);
+                   bolt.lineTo (cx - 0.85f * w, cy + 0.14f * h);
+                   bolt.lineTo (cx - 0.08f * w, cy + 0.14f * h);
+                   bolt.lineTo (cx - 0.38f * w, cy + h);
+                   bolt.lineTo (cx + 0.85f * w, cy - 0.20f * h);
+                   bolt.lineTo (cx + 0.08f * w, cy - 0.20f * h);
+                   bolt.closeSubPath();
+                   g.fillPath (bolt);
+               });
+
+    // SAW: its waveform, named after the shape selected (scroll or right-click).
+    const auto sawWave = juce::jlimit (0, 2, juce::roundToInt (load ("sawWave")));
+    const std::array<const char*, 3> sawWaveNames { "SAW", "SQR", "TRI" };
+    drawStage (editorLayout.sawButton, sawWaveNames[static_cast<size_t> (sawWave)], load ("sawEnabled") >= 0.5f,
+               load ("sawAmount"), sawButton.isMouseOver(),
+               [&g, sawWave, k] (float cx, float cy)
+               {
+                   const auto span = 6.5f * k, rise = 4.0f * k;
+                   juce::Path path;
+                   path.startNewSubPath (cx - span, cy + rise);
+                   if (sawWave == 1)
+                   {
+                       // Square: alternating levels with vertical transitions.
+                       const auto step = (span * 2.0f) / 4.0f;
+                       for (int edge = 0; edge < 4; ++edge)
+                       {
+                           const auto x = cx - span + static_cast<float> (edge) * step;
+                           const auto level = edge % 2 == 0 ? cy - rise : cy + rise;
+                           path.lineTo (x, level);
+                           path.lineTo (x + step, level);
+                       }
+                   }
+                   else if (sawWave == 2)
+                   {
+                       // Triangle: symmetric rise and fall, no vertical edges.
+                       const auto step = (span * 2.0f) / 4.0f;
+                       for (int edge = 0; edge < 4; ++edge)
+                           path.lineTo (cx - span + static_cast<float> (edge + 1) * step, edge % 2 == 0 ? cy - rise : cy + rise);
+                   }
+                   else
+                   {
+                       const auto tooth = (span * 2.0f) / 3.0f;
+                       for (int t = 0; t < 3; ++t)
+                       {
+                           const auto x = cx - span + static_cast<float> (t) * tooth;
+                           path.lineTo (x + tooth, cy - rise);
+                           if (t < 2)
+                               path.lineTo (x + tooth, cy + rise);
+                       }
+                   }
+                   g.strokePath (path, juce::PathStrokeType (1.1f * k, juce::PathStrokeType::curved,
+                                                             juce::PathStrokeType::rounded));
+               });
 }
 
 void VoidwormAudioProcessorEditor::drawMeter (juce::Graphics& g, juce::Rectangle<float> area, bool inputMeter)
@@ -2395,8 +2409,8 @@ void VoidwormAudioProcessorEditor::drawEqGraph (juce::Graphics& g, juce::Rectang
         juce::ColourGradient masterBed (juce::Colour (0xff151210), layout.masterControls.getX(), layout.masterControls.getY(),
                                         juce::Colour (0xff060606), layout.masterControls.getX(), layout.masterControls.getBottom(), false);
         g.setGradientFill (masterBed); g.fillRect (layout.masterControls);
-        const auto postGroup = layout.masterControls.withWidth (178.0f).reduced (3.0f);
-        const auto finalGroup = layout.masterControls.withTrimmedLeft (184.0f).reduced (3.0f);
+        const auto postGroup = layout.masterControls.withWidth (editorLayout.postGroupWidth).reduced (3.0f);
+        const auto finalGroup = layout.masterControls.withTrimmedLeft (editorLayout.postGroupWidth + 6.0f).reduced (3.0f);
         for (const auto group : { postGroup, finalGroup })
         {
             g.setColour (juce::Colours::black.withAlpha (0.24f)); g.fillRoundedRectangle (group, 3.0f);
@@ -2409,10 +2423,10 @@ void VoidwormAudioProcessorEditor::drawEqGraph (juce::Graphics& g, juce::Rectang
                               layout.masterControls.getX(), layout.masterControls.getRight());
         constexpr auto groupLabelInset = 8.0f;
         const auto postReactorLabelArea = juce::Rectangle<float> (
-            postGroup.getX() + groupLabelInset, editorLayout.masterLabelY,
+            postGroup.getX() + groupLabelInset, editorLayout.groupTitleY,
             editorLayout.postReactorLabel.getWidth(), editorLayout.masterLabelHeight);
         const auto finalLabelArea = juce::Rectangle<float> (
-            finalGroup.getX() + groupLabelInset, editorLayout.masterLabelY,
+            finalGroup.getX() + groupLabelInset, editorLayout.groupTitleY,
             editorLayout.finalLabel.getWidth(), editorLayout.masterLabelHeight);
         g.setColour (dimText.withAlpha (0.78f));
         g.setFont (juce::FontOptions (7.6f).withName ("Bahnschrift").withStyle ("SemiBold"));
@@ -2423,7 +2437,7 @@ void VoidwormAudioProcessorEditor::drawEqGraph (juce::Graphics& g, juce::Rectang
         auto reductionArea = layout.gainReduction;
         const auto drawGainReduction = [&] (juce::Rectangle<float> row, const juce::String& label, float reduction)
         {
-            auto telemetryArea = row.removeFromRight (122.0f).reduced (4.0f, 0.0f);
+            auto telemetryArea = row.reduced (4.0f, 0.0f);
             auto valueArea = telemetryArea.removeFromRight (46.0f);
             telemetryArea.removeFromRight (6.0f);
             g.setColour (dimText.withAlpha (0.72f));
@@ -2437,7 +2451,7 @@ void VoidwormAudioProcessorEditor::drawEqGraph (juce::Graphics& g, juce::Rectang
             g.drawText ("-" + juce::String (reduction, 1) + " dB", valueArea.toNearestInt(),
                         juce::Justification::centredRight);
         };
-        drawGainReduction (reductionArea.removeFromTop (20.0f), "WELD GR", weldGainReductionDisplay);
+        drawGainReduction (reductionArea.removeFromLeft (reductionArea.getWidth() * 0.5f), "WELD GR", weldGainReductionDisplay);
         drawGainReduction (reductionArea, "LIMIT GR", limiterGainReductionDisplay);
     }
 
@@ -2607,7 +2621,8 @@ void VoidwormAudioProcessorEditor::drawTransientValue (juce::Graphics& g)
     else if (name == "DRIVE") { centreX = 475.0f; y = 226.0f; }
     else if (name == "GATE THRESHOLD") { centreX = headerGeometry().gateThreshold.getCentreX(); y = 117.0f; }
     else if (name == "MIX") centreX = 559.0f;
-    else if (name == "SAW") centreX = editorLayout.sawAmount.getCentreX();
+    else if (name == "SAW") { centreX = editorLayout.sawAmount.getCentreX(); y = editorLayout.sawAmount.getBottom(); }
+    else if (name == "SURGE") { centreX = editorLayout.surgeAmount.getCentreX(); y = editorLayout.surgeAmount.getBottom(); }
     else if (name == "LOW") { centreX = editorLayout.secondaryKnobs[0].getCentreX(); y = 328.0f; }
     else if (name == "MID") { centreX = editorLayout.secondaryKnobs[1].getCentreX(); y = 328.0f; }
     else if (name == "HIGH") { centreX = editorLayout.secondaryKnobs[2].getCentreX(); y = 328.0f; }
@@ -2654,8 +2669,8 @@ void VoidwormAudioProcessorEditor::resized()
     drive.setBounds (scaled (editorLayout.drive));
     mix.setBounds (scaled (editorLayout.mix));
     sawAmount.setBounds (scaled (editorLayout.sawAmount));
+    surgeAmount.setBounds (scaled (editorLayout.surgeAmount));
 
-    surgeSwitch.setBounds (scaled (editorLayout.surge));
     low.setBounds (scaled (editorLayout.secondaryKnobs[0]));
     mid.setBounds (scaled (editorLayout.secondaryKnobs[1]));
     high.setBounds (scaled (editorLayout.secondaryKnobs[2]));
@@ -2680,9 +2695,10 @@ void VoidwormAudioProcessorEditor::resized()
     for (auto* slider : { &reactorAmount, &reactorCharacterA, &reactorCharacterB })
         slider->setVisible (reactorWorkspace.isReactorPage());
     const auto masterVisible = ! reactorWorkspace.isReactorPage();
-    const std::array<juce::Component*, 8> masterComponents {
+    const std::array<juce::Component*, 14> masterComponents {
         &weld, &limiterThreshold, &limiterCeiling, &limiterSwitch,
-        &weldLabel, &limiterThresholdLabel, &limiterCeilingLabel, &limiterSwitchLabel
+        &weldLabel, &limiterThresholdLabel, &limiterCeilingLabel, &limiterSwitchLabel,
+        &surgeButton, &surgeAmount, &surgeAmountLabel, &sawButton, &sawAmount, &sawAmountLabel
     };
     for (auto* component : masterComponents)
         component->setVisible (masterVisible);
@@ -2697,7 +2713,6 @@ void VoidwormAudioProcessorEditor::resized()
     setLabelAt (rotLabel, editorLayout.rot.getCentreX(), editorLayout.primaryLabelY, 78.0f);
     setLabelAt (driveLabel, editorLayout.drive.getCentreX(), 185.0f, 48.0f, 10.0f);
     setLabelAt (mixLabel, editorLayout.mix.getCentreX(), editorLayout.primaryLabelY, 78.0f);
-    setLabelAt (surgeLabel, editorLayout.surge.getCentreX(), editorLayout.surgeLabelY, 78.0f);
     setLabelAt (lowLabel, editorLayout.secondaryKnobs[0].getCentreX(), editorLayout.secondaryLabelY, 78.0f);
     setLabelAt (midLabel, editorLayout.secondaryKnobs[1].getCentreX(), editorLayout.secondaryLabelY, 78.0f);
     setLabelAt (highLabel, editorLayout.secondaryKnobs[2].getCentreX(), editorLayout.secondaryLabelY, 78.0f);
@@ -2710,6 +2725,8 @@ void VoidwormAudioProcessorEditor::resized()
                             width, editorLayout.masterLabelHeight));
     };
     setWorkspaceLabel (weldLabel, workspaceLayout.weldSlider, 58.0f);
+    setWorkspaceLabel (surgeAmountLabel, editorLayout.surgeAmount, 58.0f);
+    setWorkspaceLabel (sawAmountLabel, editorLayout.sawAmount, 58.0f);
     setWorkspaceLabel (limiterThresholdLabel, workspaceLayout.limiterThresholdSlider, 58.0f);
     setWorkspaceLabel (limiterCeilingLabel, workspaceLayout.limiterCeilingSlider, 68.0f);
     limiterSwitchLabel.setBounds (R (workspaceLayout.limiterEnabled.getX(), editorLayout.masterLabelY,
@@ -2722,9 +2739,8 @@ void VoidwormAudioProcessorEditor::resized()
     gateButton.setBounds (scaled (header.gate));
     gateThreshold.setBounds (scaled (header.gateThreshold));
     sawButton.setBounds (scaled (editorLayout.sawButton));
+    surgeButton.setBounds (scaled (editorLayout.surgeButton));
     setLabelAt (gateThresholdLabel, header.gateThreshold.getCentreX(), 83.0f, 29.0f, 7.0f);
-    setLabelAt (sawAmountLabel, editorLayout.sawAmount.getCentreX(),
-                editorLayout.sawModule.getY() + 1.0f, 29.0f, 7.0f);
     gridButton.setBounds (scaled (header.grid));
     searchButton.setBounds (scaled (header.search));
     settingsButton.setBounds (scaled (header.settings));
@@ -2738,15 +2754,15 @@ void VoidwormAudioProcessorEditor::resized()
                                toastWidth, juce::roundToInt (34.0f * sy));
 
     const auto smallFont = 9.0f * sy;
-    for (auto* label : { &breachLabel, &tearLabel, &rotLabel, &mixLabel, &surgeLabel,
+    for (auto* label : { &breachLabel, &tearLabel, &rotLabel, &mixLabel,
                          &lowLabel, &midLabel, &highLabel, &rangeLabel, &outputLabel, &inputLabel,
                          &weldLabel, &limiterThresholdLabel, &limiterCeilingLabel, &limiterSwitchLabel })
         label->setFont (juce::FontOptions (smallFont).withName ("Bahnschrift").withStyle ("Regular"));
-    for (auto* label : { &weldLabel, &limiterThresholdLabel, &limiterCeilingLabel, &limiterSwitchLabel })
+    for (auto* label : { &weldLabel, &limiterThresholdLabel, &limiterCeilingLabel, &limiterSwitchLabel,
+                         &surgeAmountLabel, &sawAmountLabel })
         label->setFont (juce::FontOptions (8.0f * sy).withName ("Bahnschrift").withStyle ("SemiBold"));
     driveLabel.setFont (juce::FontOptions (7.0f * sy).withName ("Bahnschrift").withStyle ("Regular"));
     gateThresholdLabel.setFont (juce::FontOptions (5.8f * sy).withName ("Bahnschrift").withStyle ("SemiBold"));
-    sawAmountLabel.setFont (juce::FontOptions (5.8f * sy).withName ("Bahnschrift").withStyle ("SemiBold"));
     overloadLabel.setFont (juce::FontOptions (14.0f * sy).withName ("Bahnschrift").withStyle ("Light"));
 }
 
@@ -2895,6 +2911,7 @@ void VoidwormAudioProcessorEditor::applySoundSnapshot (voidworm::Parameters p, c
     for (size_t value = 0; value < ids.size(); ++value)
         setParameterActual (processor.parameters, ids[value], values[value]);
     setParameterActual (processor.parameters, "surge", p.surge ? 1.0f : 0.0f);
+    setParameterActual (processor.parameters, "surgeAmount", p.surgeAmount);
     setParameterActual (processor.parameters, "weld", p.weld);
     setParameterActual (processor.parameters, "limiterEnabled", p.limiterEnabled ? 1.0f : 0.0f);
     setParameterActual (processor.parameters, "limiterThreshold", p.limiterThresholdDb);
@@ -3231,7 +3248,7 @@ void VoidwormAudioProcessorEditor::timerCallback()
     limiterGainReductionDisplay = smoothReduction (processor.getLimiterGainReductionDb(), limiterGainReductionDisplay);
     const auto hqState = processor.parameters.getRawParameterValue ("hqMode")->load() >= 0.5f;
     hqButton.setActive (hqState);
-    surgeSwitch.updateAnimation(); limiterSwitch.updateAnimation();
+    limiterSwitch.updateAnimation();
     const auto currentSound = processor.captureParameterSnapshot();
     const auto dirty = presetAssociation == PresetAssociation::custom
                     || ! voidworm::UserPresetStore::soundStatesEqual (currentSound, cleanPresetSound);
