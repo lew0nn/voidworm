@@ -30,13 +30,14 @@ private:
         float dcOutput = 0.0f;
     };
 
-    static float asymmetricClip (float input) noexcept;
+    static float asymmetricClip (float input, float hardness) noexcept;
     std::array<State, 2> states {};
     Dynamics compressor;
     ReactorPreEq preEq;
     float lowCoefficient = 0.0f;
     float lowMidCoefficient = 0.0f;
     float cleanupCoefficient = 0.0f;
+    double processingRate = 44100.0;
     juce::SmoothedValue<float> saturationSmooth;
     juce::SmoothedValue<float> harmonicsSmooth;
 };

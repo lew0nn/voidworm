@@ -42,10 +42,10 @@ DspFaultCounters FeedbackChain::getAndClearFaultCounters() noexcept
     return counters;
 }
 
-float FeedbackChain::boundedShape (float input) noexcept
+float FeedbackChain::boundedShape (float input, float hardness) noexcept
 {
     const auto magnitude = std::abs (input);
-    return input / (1.0f + 0.64f * magnitude + 0.11f * magnitude * magnitude);
+    return input / (1.0f + hardness * 0.64f * magnitude + hardness * 0.11f * magnitude * magnitude);
 }
 
 void FeedbackChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettings eq,
@@ -60,8 +60,17 @@ void FeedbackChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSetti
     returnSmooth.setTargetValue (character::sanitise (returnControl));
     dampSmooth.setTargetValue (character::sanitise (damp));
     const auto maximum = juce::jlimit (0.0f, 0.62f, 0.34f + 0.09f * overload + 0.18f * surge);
-    const auto inputDrive = 1.0f + 1.4f * rot + 0.22f * overload;
-    safetyDynamics.setParameters (-14.0f - 7.0f * overload, 9.0f + 7.0f * overload,
+    /* Above its middle, RETURN wakes FEEDBACK up: it drives the loop and its
+       shaper harder, opens the loop's damping, eases the safety compressor
+       that used to flatten what it made, and brings it forward in the mix
+       (the rack also stops waiting for sustained notes; see ReactorRack). */
+    const auto fury = character::anger (returnSmooth.getCurrentValue());
+    const auto hardness = 1.0f + 3.0f * fury;
+    const auto brightness = 1.0f + 2.0f * fury;
+    const auto level = 1.0f + 2.5f * fury;
+    const auto inputDrive = (1.0f + 1.4f * rot + 0.22f * overload) * (1.0f + 3.0f * fury);
+    safetyDynamics.setParameters (-14.0f - 7.0f * overload + 16.0f * fury,
+                                  (9.0f + 7.0f * overload) * (1.0f - 0.7f * fury),
                                   0.8f, 42.0f);
 
     const auto returnIsSmoothing = returnSmooth.isSmoothing();
@@ -69,7 +78,7 @@ void FeedbackChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSetti
     const auto stableFeedbackAmount = returnIsSmoothing ? 0.0f
         : character::feedbackReturnAmount (maximum, activation, returnSmooth.getCurrentValue());
     const auto stableCutoff = dampIsSmoothing ? 0.0f
-        : juce::jmin (character::feedbackDampingCutoff (dampSmooth.getCurrentValue()),
+        : juce::jmin (brightness * character::feedbackDampingCutoff (dampSmooth.getCurrentValue()),
                       static_cast<float> (processingRate * 0.45));
     const auto stableDampingCoefficient = dampIsSmoothing ? 0.0f : 1.0f - std::exp (
         -juce::MathConstants<float>::twoPi * stableCutoff / static_cast<float> (processingRate));
@@ -82,7 +91,7 @@ void FeedbackChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSetti
         auto dampingCoefficient = stableDampingCoefficient;
         if (dampIsSmoothing)
         {
-            const auto cutoff = juce::jmin (character::feedbackDampingCutoff (dampSmooth.getNextValue()),
+            const auto cutoff = juce::jmin (brightness * character::feedbackDampingCutoff (dampSmooth.getNextValue()),
                                             static_cast<float> (processingRate * 0.45));
             dampingCoefficient = 1.0f - std::exp (
                 -juce::MathConstants<float>::twoPi * cutoff / static_cast<float> (processingRate));
@@ -105,7 +114,7 @@ void FeedbackChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSetti
                 continue;
             }
             const auto recursiveInput = input * inputDrive + state.recursive * feedbackAmount;
-            const auto shaped = boundedShape (recursiveInput);
+            const auto shaped = boundedShape (recursiveInput, hardness);
             state.damping += dampingCoefficient * (shaped - state.damping);
             const auto silenceDecay = std::abs (input) < 1.0e-6f ? 0.92f : 0.985f;
             state.recursive = juce::jlimit (-1.2f, 1.2f, state.damping * silenceDecay);
@@ -113,7 +122,7 @@ void FeedbackChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSetti
             const auto dcBlocked = density - state.dcInput + 0.995f * state.dcOutput;
             state.dcInput = density;
             state.dcOutput = dcBlocked;
-            const auto processed = safetyDynamics.processSample (static_cast<int> (channel), dcBlocked);
+            const auto processed = level * safetyDynamics.processSample (static_cast<int> (channel), dcBlocked);
             if (! fastmath::isFinite (processed) || ! fastmath::isFinite (state.recursive)
                 || ! fastmath::isFinite (state.damping) || ! fastmath::isFinite (state.dcOutput)
                 || std::abs (state.recursive) > stateLimit || std::abs (state.damping) > stateLimit

@@ -45,6 +45,15 @@ inline float neutralScale (float value, float maximumScale) noexcept
     return 1.0f + (safe - 0.5f) * 2.0f * (juce::jmax (1.0f, maximumScale) - 1.0f);
 }
 
+// How far a control sits above its neutral middle, 0 to 1. MASS and FEEDBACK
+// were the calm reactors; the upper half of their character controls now
+// also opens up a harder, grittier stage. At the middle or below nothing
+// changes, so a default instance sounds exactly as before.
+inline float anger (float value) noexcept
+{
+    return juce::jmax (0.0f, (sanitise (value) - 0.5f) * 2.0f);
+}
+
 inline float massDrive (float baseDrive, float saturation) noexcept
 {
     return 1.0f + juce::jmax (0.0f, baseDrive - 1.0f) * neutralScale (saturation, 1.55f);

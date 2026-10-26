@@ -294,7 +294,10 @@ ReactorActivity ReactorRack::process (juce::dsp::AudioBlock<float>& block, int o
                          * (0.72f + 0.18f * breach + 0.10f * surge));
     const auto feedbackMetric = 0.62f * features.sustain + 0.38f * features.slowEnvelope;
     const auto feedbackThreshold = juce::jmap (overload, 0.20f, 0.075f);
-    const auto feedbackActivation = smoothstep (feedbackThreshold, feedbackThreshold + 0.24f, feedbackMetric);
+    // A RETURN above its middle stops FEEDBACK waiting for sustained notes, so
+    // it speaks on short, plucked or staccato material too.
+    const auto feedbackActivation = juce::jmax (character::anger (character.feedbackReturn),
+        smoothstep (feedbackThreshold, feedbackThreshold + 0.24f, feedbackMetric));
     const auto feedbackTarget = juce::jlimit (0.0f, 0.45f,
         feedbackActivation * (0.24f + 0.12f * overload + 0.09f * surge));
     if (processFeedback)

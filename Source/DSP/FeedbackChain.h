@@ -34,7 +34,7 @@ private:
         float dcOutput = 0.0f;
     };
 
-    static float boundedShape (float input) noexcept;
+    static float boundedShape (float input, float hardness) noexcept;
     std::array<State, 2> states {};
     Dynamics safetyDynamics;
     ReactorPreEq preEq;
