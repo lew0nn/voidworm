@@ -2444,10 +2444,13 @@ void VoidwormAudioProcessorEditor::drawEqGraph (juce::Graphics& g, juce::Rectang
             g.setColour (dimText.withAlpha (0.72f));
             g.setFont (juce::FontOptions (6.8f).withName ("Bahnschrift").withStyle ("SemiBold"));
             g.drawText ("GR", row.withTrimmedRight (row.getWidth() * 0.5f + 3.0f).toNearestInt(), juce::Justification::centredRight);
+            // Dim at 0.0 while nothing is being reduced; lit once it works.
+            const auto working = reduction >= 0.05f;
             const auto emphasis = juce::jlimit (0.0f, 1.0f, reduction / 6.0f);
-            g.setColour (crimson.interpolatedWith (ember, emphasis * 0.35f).withAlpha (0.58f + emphasis * 0.34f));
+            g.setColour (working ? crimson.interpolatedWith (ember, emphasis * 0.35f).withAlpha (0.66f + emphasis * 0.30f)
+                                 : dimText.withAlpha (0.45f));
             g.setFont (juce::FontOptions (7.2f).withName ("Bahnschrift").withStyle ("SemiBold"));
-            g.drawText ("-" + juce::String (reduction, 1) + " dB", row.withTrimmedLeft (row.getWidth() * 0.5f - 1.0f).toNearestInt(),
+            g.drawText ((working ? "-" + juce::String (reduction, 1) : juce::String ("0.0")) + " dB", row.withTrimmedLeft (row.getWidth() * 0.5f - 1.0f).toNearestInt(),
                         juce::Justification::centredLeft);
         };
         drawGainReduction (editorLayout.weld.getCentreX(), weldGainReductionDisplay);
@@ -2628,8 +2631,16 @@ void VoidwormAudioProcessorEditor::drawTransientValue (juce::Graphics& g)
     else if (name == "RANGE") { centreX = editorLayout.secondaryKnobs[3].getCentreX(); y = 328.0f; }
     else if (name == "OUTPUT") { centreX = editorLayout.secondaryKnobs[4].getCentreX(); y = 328.0f; }
     else if (name == "INPUT") { centreX = editorLayout.input.getCentreX(); y = 328.0f; }
+    else
+    {
+        // Any other knob -- WELD, LIMIT, CEILING, the REACTOR page -- shows its
+        // value just under itself, so no readout ever lands out of sight.
+        const auto own = activeSlider->getBounds().toFloat();
+        centreX = own.getCentreX() * designWidth / static_cast<float> (getWidth());
+        y = own.getBottom() * designHeight / static_cast<float> (getHeight()) + 1.0f;
+    }
     const auto isDb = name == "DRIVE" || name == "GATE THRESHOLD" || name == "LOW" || name == "MID"
-                   || name == "HIGH" || name == "OUTPUT" || name == "INPUT";
+                   || name == "HIGH" || name == "OUTPUT" || name == "INPUT" || name == "LIMIT" || name == "CEILING";
     const auto parameterSpan = juce::jmax (0.000001, activeSlider->getMaximum() - activeSlider->getMinimum());
     const auto percentage = (activeSlider->getValue() - activeSlider->getMinimum()) / parameterSpan;
     const auto text = isDb ? juce::String (activeSlider->getValue(), 1) + " dB"
