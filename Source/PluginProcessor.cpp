@@ -263,7 +263,9 @@ juce::AudioProcessorEditor* VoidwormAudioProcessor::createEditor()
 
 void VoidwormAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    if (auto xml = parameters.copyState().createXml())
+    auto state = parameters.copyState();
+    state.setProperty ("mixLaw", voidworm::currentMixLaw, nullptr);
+    if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
 }
 
@@ -276,6 +278,12 @@ void VoidwormAudioProcessor::setStateInformation (const void* data, int sizeInBy
             beginPresetChange();
             auto restoredState = juce::ValueTree::fromXml (*xml);
             restoredState.removeProperty ("reactorSolo", nullptr);
+            // A session saved under the old MIX law keeps its dry:wet balance.
+            if (static_cast<int> (restoredState.getProperty ("mixLaw", 1)) < voidworm::currentMixLaw)
+                for (auto child : restoredState)
+                    if (child.getProperty ("id").toString() == "mix")
+                        child.setProperty ("value", voidworm::mixFromEqualPower (static_cast<float> (child.getProperty ("value"))), nullptr);
+            restoredState.setProperty ("mixLaw", voidworm::currentMixLaw, nullptr);
             parameters.replaceState (restoredState);
             commitPresetChange ({ captureParameterSnapshot() });
         }

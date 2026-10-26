@@ -88,7 +88,8 @@ inline FactoryPreset makeFactoryPreset (const char* name, const char* family, co
 {
     Parameters p;
     p.breach = main[0]; p.tear = main[1]; p.rot = main[2]; p.driveDb = main[3];
-    p.overload = main[4]; p.mix = main[5]; p.lowDb = main[6]; p.midDb = main[7];
+    // The factory MIX values were voiced under the old equal-power law.
+    p.overload = main[4]; p.mix = mixFromEqualPower (main[5]); p.lowDb = main[6]; p.midDb = main[7];
     p.highDb = main[8]; p.range = main[9]; p.outputDb = main[10];
     p.reactorEnabled = enabled;
     p.reactorAmounts = amounts;

@@ -141,6 +141,7 @@ juce::ValueTree UserPresetStore::makeTree (const juce::String& name, const Param
     root.setProperty ("formatVersion", formatVersion, nullptr);
     root.setProperty ("presetName", name, nullptr);
     root.setProperty ("createdWithVersion", "1.2.0", nullptr);
+    root.setProperty ("mixLaw", currentMixLaw, nullptr);
     juce::ValueTree sound ("SOUND");
     sound.setProperty ("breach", p.breach, nullptr); sound.setProperty ("tear", p.tear, nullptr);
     sound.setProperty ("rot", p.rot, nullptr); sound.setProperty ("drive", p.driveDb, nullptr);
@@ -201,6 +202,8 @@ bool UserPresetStore::readTree (const juce::ValueTree& root, UserPreset& result,
     auto& p = result.parameters;
     p.breach = sound["breach"]; p.tear = sound["tear"]; p.rot = sound["rot"]; p.driveDb = sound["drive"];
     p.overload = sound["overload"]; p.mix = sound["mix"]; p.surge = sound["surge"];
+    if (static_cast<int> (root.getProperty ("mixLaw", 1)) < currentMixLaw)
+        p.mix = mixFromEqualPower (p.mix);   // saved under the old MIX law
     p.lowDb = sound["low"]; p.midDb = sound["mid"]; p.highDb = sound["high"];
     p.range = sound["range"]; p.outputDb = sound["output"]; p.weld = sound["weld"];
     p.limiterEnabled = sound["limiterEnabled"]; p.limiterThresholdDb = sound["limiterThreshold"];

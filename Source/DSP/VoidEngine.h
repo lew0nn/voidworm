@@ -16,6 +16,23 @@
 
 namespace voidworm
 {
+/* MIX is a straight crossfade with a square-root taper: dry and wet are
+   largely the same signal, so the equal-power law used before 1.2 added up in
+   the middle (+1.4 dB) and left most of the audible change for the top of the
+   knob. Under the square-root taper the change is spread evenly: half the knob
+   is half the change. A MIX value saved under the old law converts with the
+   dry:wet balance kept exactly (only the overall level moves, by at most
+   ~3 dB, and never at either end). */
+constexpr int currentMixLaw = 2;
+inline float mixFromEqualPower (float oldMix) noexcept
+{
+    const auto clamped = juce::jlimit (0.0f, 1.0f, oldMix);
+    const auto wet = std::sin (clamped * juce::MathConstants<float>::halfPi);
+    const auto dry = std::cos (clamped * juce::MathConstants<float>::halfPi);
+    const auto share = wet / (wet + dry);
+    return share * share;
+}
+
 struct Parameters
 {
     float breach = 0.35f;
@@ -23,7 +40,7 @@ struct Parameters
     float rot = 0.42f;
     float driveDb = 4.0f;
     float overload = 0.35f;
-    float mix = 0.72f;
+    float mix = 0.4624f;   // 72% under the old equal-power law; see mixFromEqualPower
     float range = 0.92f;
     float lowDb = 0.0f;
     float midDb = 0.0f;

@@ -31,7 +31,7 @@ void VoidEngine::prepare (double newSampleRate, int maximumBlockSize, int channe
     // The dry path now carries the wet path's delay itself (see processChunk),
     // so the mixer adds none.
     dryWetMixer = std::make_unique<juce::dsp::DryWetMixer<float>> (0);
-    dryWetMixer->setMixingRule (juce::dsp::DryWetMixingRule::sin3dB);
+    dryWetMixer->setMixingRule (juce::dsp::DryWetMixingRule::linear);
     dryWetMixer->setWetLatency (0.0f);
     dryWetMixer->prepare ({ sampleRate, static_cast<juce::uint32> (maximumBlockSize),
                             static_cast<juce::uint32> (channelCount) });
@@ -171,7 +171,7 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
     const auto rot = finiteClamped (p.rot, 0.0f, 1.0f, 0.42f);
     const auto drive = juce::Decibels::decibelsToGain (finiteClamped (p.driveDb, 0.0f, 18.0f, 4.0f));
     const auto overload = finiteClamped (p.overload, 0.0f, 1.0f, 0.35f);
-    const auto mix = finiteClamped (p.mix, 0.0f, 1.0f, 0.72f);
+    const auto mix = finiteClamped (p.mix, 0.0f, 1.0f, Parameters {}.mix);
     const auto range = finiteClamped (p.range, 0.0f, 1.0f, 0.92f);
     const auto low = finiteClamped (p.lowDb, -12.0f, 12.0f, 0.0f);
     const auto mid = finiteClamped (p.midDb, -12.0f, 12.0f, 0.0f);
@@ -545,7 +545,7 @@ void VoidEngine::processChunk (juce::AudioBuffer<float>& buffer) noexcept
     {
         VOIDWORM_PROFILE_SCOPE (performance::Stage::fixedLatencyAndMix);
         oversampling.applyFixedLatency (buffer);
-        dryWetMixer->setWetMixProportion (mixSmooth.skip (samples));
+        dryWetMixer->setWetMixProportion (std::sqrt (juce::jlimit (0.0f, 1.0f, mixSmooth.skip (samples))));
         dryWetMixer->mixWetSamples (wetOutputBlock);
     }
 #if VOIDWORM_ENABLE_DIAGNOSTICS
