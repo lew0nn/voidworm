@@ -21,7 +21,7 @@ struct EditorLayout
     float overloadVisibleRingTop = 88.0f;
     float primaryKnobY = 85.0f;
     float secondaryLabelY = 259.0f;
-    float surgeLabelY = 266.0f;
+    float surgeLabelY = 185.0f;
     float secondaryControlY = 280.0f;
     float masterLabelY = 404.0f;
     float contextLabelY = 405.0f;
@@ -37,7 +37,9 @@ struct EditorLayout
     juce::Rectangle<float> rot { 433.0f, 85.0f, 84.0f, 92.0f };
     juce::Rectangle<float> drive { 460.0f, 197.0f, 30.0f, 28.0f };
     juce::Rectangle<float> mix { 517.0f, 85.0f, 84.0f, 92.0f };
-    juce::Rectangle<float> surge { 101.0f, 279.0f, 102.0f, 40.0f };
+    // SURGE sits under MIX in the primary panel's free band, beside DRIVE, so
+    // the bottom row can run INPUT to OUTPUT.
+    juce::Rectangle<float> surge { 516.0f, 199.0f, 86.0f, 32.0f };
 
     // SAW is a post-reactor stage, but its module sits in the primary panel's
     // free band so it stays visible on both lower-workspace pages. Geometry
@@ -48,10 +50,12 @@ struct EditorLayout
     juce::Rectangle<float> sawButton { 158.0f, 201.0f, 27.0f, 32.0f };
     juce::Rectangle<float> sawAmount { 192.0f, 208.0f, 25.0f, 23.0f };
     float sawGlyphCentreY = 220.5f;
+    // INPUT opens the bottom row and OUTPUT closes it: six knobs on an 87 px pitch.
+    juce::Rectangle<float> input { 103.0f, 280.0f, 68.0f, 52.0f };
     std::array<juce::Rectangle<float>, 5> secondaryKnobs {{
-        { 202.0f, 280.0f, 68.0f, 52.0f }, { 285.0f, 280.0f, 68.0f, 52.0f },
-        { 368.0f, 280.0f, 68.0f, 52.0f }, { 451.0f, 280.0f, 68.0f, 52.0f },
-        { 534.0f, 280.0f, 68.0f, 52.0f }
+        { 190.0f, 280.0f, 68.0f, 52.0f }, { 277.0f, 280.0f, 68.0f, 52.0f },
+        { 364.0f, 280.0f, 68.0f, 52.0f }, { 451.0f, 280.0f, 68.0f, 52.0f },
+        { 538.0f, 280.0f, 68.0f, 52.0f }
     }};
 
     juce::Rectangle<float> masterControls { 12.0f, 393.0f, 684.0f, 66.0f };

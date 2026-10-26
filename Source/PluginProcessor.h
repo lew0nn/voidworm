@@ -101,6 +101,7 @@ private:
         std::atomic<float>* mid = nullptr;
         std::atomic<float>* high = nullptr;
         std::atomic<float>* output = nullptr;
+        std::atomic<float>* input = nullptr;
         std::atomic<float>* weld = nullptr;
         std::atomic<float>* limiterEnabled = nullptr;
         std::atomic<float>* limiterThreshold = nullptr;
@@ -121,7 +122,7 @@ private:
     void cacheParameterHandles();
     ParameterHandles handles;
     void resetMeters() noexcept;
-    void publishMeterBlock (const juce::AudioBuffer<float>&, bool input) noexcept;
+    void publishMeterBlock (const juce::AudioBuffer<float>&, bool input, float gain = 1.0f) noexcept;
     voidworm::VoidEngine engine;
     voidworm::PresetSnapshotMailbox presetMailbox;
     voidworm::Parameters activeParameters;

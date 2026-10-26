@@ -37,7 +37,7 @@ void VoidEngine::prepare (double newSampleRate, int maximumBlockSize, int channe
                             static_cast<juce::uint32> (channelCount) });
     for (auto* value : { &breachSmooth, &tearSmooth, &rotSmooth, &driveSmooth, &overloadSmooth, &mixSmooth, &rangeSmooth,
                          &lowSmooth, &midSmooth, &highSmooth, &outputSmooth, &weldSmooth,
-                         &limiterThresholdSmooth, &limiterCeilingSmooth })
+                         &limiterThresholdSmooth, &limiterCeilingSmooth, &inputSmooth })
         value->reset (sampleRate, 0.035);
     gateContainmentSmooth.reset (sampleRate, 0.008);
     surgeAttackCoefficient = std::exp (-1.0f / (0.200f * static_cast<float> (sampleRate)));
@@ -177,6 +177,7 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
     const auto mid = finiteClamped (p.midDb, -12.0f, 12.0f, 0.0f);
     const auto high = finiteClamped (p.highDb, -12.0f, 12.0f, 0.0f);
     const auto output = juce::Decibels::decibelsToGain (finiteClamped (p.outputDb, -24.0f, 6.0f, -4.0f));
+    const auto input = juce::Decibels::decibelsToGain (finiteClamped (p.inputDb, -24.0f, 12.0f, 0.0f));
     const auto weld = finiteClamped (p.weld, 0.0f, 1.0f, 0.30f);
     const auto limiterThreshold = finiteClamped (p.limiterThresholdDb, -18.0f, 0.0f, -3.0f);
     const auto limiterCeiling = finiteClamped (p.limiterCeilingDb, -6.0f, 0.0f, -0.8f);
@@ -198,6 +199,7 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
         midSmooth.setCurrentAndTargetValue (mid);
         highSmooth.setCurrentAndTargetValue (high);
         outputSmooth.setCurrentAndTargetValue (output);
+        inputSmooth.setCurrentAndTargetValue (input);
         weldSmooth.setCurrentAndTargetValue (weld);
         limiterThresholdSmooth.setCurrentAndTargetValue (limiterThreshold);
         limiterCeilingSmooth.setCurrentAndTargetValue (limiterCeiling);
@@ -218,6 +220,7 @@ void VoidEngine::setTargets (const Parameters& p) noexcept
         midSmooth.setTargetValue (mid);
         highSmooth.setTargetValue (high);
         outputSmooth.setTargetValue (output);
+        inputSmooth.setTargetValue (input);
         weldSmooth.setTargetValue (weld);
         limiterThresholdSmooth.setTargetValue (limiterThreshold);
         limiterCeilingSmooth.setTargetValue (limiterCeiling);
@@ -327,6 +330,15 @@ void VoidEngine::process (juce::AudioBuffer<float>& buffer) noexcept
 #else
     juce::ignoreUnused (inputRepairs);
 #endif
+    // INPUT: the level into the whole plugin, gate and dry path included. At
+    // 0 dB with nothing moving it is skipped, so the signal is untouched.
+    if (inputSmooth.isSmoothing() || inputSmooth.getTargetValue() != 1.0f)
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
+            const auto gain = inputSmooth.getNextValue();
+            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+                buffer.setSample (channel, sample, buffer.getSample (channel, sample) * gain);
+        }
 
     // Bound analyzer look-ahead to a short causal chunk. Each chunk is analyzed
     // after DRIVE and then its reactors consume that current source description.

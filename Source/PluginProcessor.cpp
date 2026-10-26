@@ -31,6 +31,7 @@ void VoidwormAudioProcessor::cacheParameterHandles()
     handles.mid = resolve ("mid");
     handles.high = resolve ("high");
     handles.output = resolve ("output");
+    handles.input = resolve ("input");
     handles.weld = resolve ("weld");
     handles.limiterEnabled = resolve ("limiterEnabled");
     handles.limiterThreshold = resolve ("limiterThreshold");
@@ -96,7 +97,7 @@ void VoidwormAudioProcessor::resetMeters() noexcept
     meterFaultCount.store (0, std::memory_order_relaxed);
 }
 
-void VoidwormAudioProcessor::publishMeterBlock (const juce::AudioBuffer<float>& buffer, bool input) noexcept
+void VoidwormAudioProcessor::publishMeterBlock (const juce::AudioBuffer<float>& buffer, bool input, float gain) noexcept
 {
     auto& peaks = input ? inputMeterPeak : outputMeterPeak;
     auto& rmsValues = input ? inputMeterRms : outputMeterRms;
@@ -123,8 +124,8 @@ void VoidwormAudioProcessor::publishMeterBlock (const juce::AudioBuffer<float>& 
             }
         const auto rms = finiteSamples == 0 ? 0.0f
             : static_cast<float> (std::sqrt (sumSquares / static_cast<double> (finiteSamples)));
-        peaks[static_cast<size_t> (displayChannel)].store (peak, std::memory_order_relaxed);
-        rmsValues[static_cast<size_t> (displayChannel)].store (rms, std::memory_order_relaxed);
+        peaks[static_cast<size_t> (displayChannel)].store (peak * gain, std::memory_order_relaxed);
+        rmsValues[static_cast<size_t> (displayChannel)].store (rms * gain, std::memory_order_relaxed);
     }
 }
 
@@ -149,6 +150,7 @@ voidworm::Parameters VoidwormAudioProcessor::captureParameterSnapshot() noexcept
     p.midDb = handles.mid->load();
     p.highDb = handles.high->load();
     p.outputDb = handles.output->load();
+    p.inputDb = handles.input->load();
     p.weld = handles.weld->load();
     p.limiterEnabled = handles.limiterEnabled->load() >= 0.5f;
     p.limiterThresholdDb = handles.limiterThreshold->load();
@@ -203,7 +205,7 @@ void VoidwormAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     juce::ScopedNoDenormals noDenormals;
     for (auto channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
         buffer.clear (channel, 0, buffer.getNumSamples());
-    publishMeterBlock (buffer, true);
+    publishMeterBlock (buffer, true, engine.getInputGain());
 
     voidworm::PresetSnapshot requested;
     auto hasPresetRequest = false;

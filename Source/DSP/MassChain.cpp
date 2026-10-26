@@ -70,10 +70,10 @@ void MassChain::process (juce::dsp::AudioBlock<float>& block, ReactorEqSettings 
     for (size_t sample = 0; sample < block.getNumSamples(); ++sample)
     {
         const auto drive = character::massDrive (baseDrive, saturationSmooth.getNextValue());
-        const auto harmonics = harmonicsSmooth.getNextValue();
-        const auto harmonicBlend = juce::jmax (character::anger (harmonics),
-            character::massHarmonicBlend (baseHarmonicBlend, harmonics));
-        const auto cleanLow = 0.42f - 0.34f * character::anger (harmonics);
+        const auto harmonicsNow = harmonicsSmooth.getNextValue();
+        const auto harmonicBlend = juce::jmax (character::anger (harmonicsNow),
+            character::massHarmonicBlend (baseHarmonicBlend, harmonicsNow));
+        const auto cleanLow = 0.42f - 0.34f * character::anger (harmonicsNow);
         /* Above its middle, SATURATION clips the lows much harder and then
            squares them off under a ceiling, like a fuzz on a bass: still only
            the lows, so MASS stays the bass reactor, but with teeth. The

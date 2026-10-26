@@ -1568,6 +1568,8 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     configureSlider (high, "HIGH", highLabel);
     configureSlider (range, "RANGE", rangeLabel);
     configureSlider (output, "OUTPUT", outputLabel);
+    configureSlider (input, "INPUT", inputLabel);
+    input.setTooltip ("INPUT - level into the whole plugin, dry included");
     configureSlider (weld, "WELD", weldLabel);
     configureSlider (limiterThreshold, "LIMIT", limiterThresholdLabel);
     configureSlider (limiterCeiling, "CEILING", limiterCeilingLabel);
@@ -1619,6 +1621,7 @@ VoidwormAudioProcessorEditor::VoidwormAudioProcessorEditor (VoidwormAudioProcess
     highAttachment = std::make_unique<Attachment> (processor.parameters, "high", high);
     rangeAttachment = std::make_unique<Attachment> (processor.parameters, "range", range);
     outputAttachment = std::make_unique<Attachment> (processor.parameters, "output", output);
+    inputAttachment = std::make_unique<Attachment> (processor.parameters, "input", input);
     weldAttachment = std::make_unique<Attachment> (processor.parameters, "weld", weld);
     limiterThresholdAttachment = std::make_unique<Attachment> (processor.parameters, "limiterThreshold", limiterThreshold);
     limiterCeilingAttachment = std::make_unique<Attachment> (processor.parameters, "limiterCeiling", limiterCeiling);
@@ -1805,10 +1808,10 @@ void VoidwormAudioProcessorEditor::setTheme (int index)
     const auto text = themeText();
     for (auto* label : { &breachLabel, &tearLabel, &overloadLabel, &rotLabel, &driveLabel, &mixLabel, &surgeLabel,
                          &gateThresholdLabel, &sawAmountLabel,
-                         &lowLabel, &midLabel, &highLabel, &rangeLabel, &outputLabel })
+                         &lowLabel, &midLabel, &highLabel, &rangeLabel, &outputLabel, &inputLabel })
         label->setColour (juce::Label::textColourId, text);
     for (auto* slider : { &breach, &tear, &overload, &rot, &drive, &mix, &gateThreshold, &sawAmount,
-                          &low, &mid, &high, &range, &output,
+                          &low, &mid, &high, &range, &output, &input,
                           &reactorAmount, &reactorCharacterA, &reactorCharacterB })
         slider->repaint();
     surgeSwitch.repaint();
@@ -2605,13 +2608,14 @@ void VoidwormAudioProcessorEditor::drawTransientValue (juce::Graphics& g)
     else if (name == "GATE THRESHOLD") { centreX = headerGeometry().gateThreshold.getCentreX(); y = 117.0f; }
     else if (name == "MIX") centreX = 559.0f;
     else if (name == "SAW") centreX = editorLayout.sawAmount.getCentreX();
-    else if (name == "LOW") { centreX = 236.0f; y = 328.0f; }
-    else if (name == "MID") { centreX = 319.0f; y = 328.0f; }
-    else if (name == "HIGH") { centreX = 402.0f; y = 328.0f; }
-    else if (name == "RANGE") { centreX = 485.0f; y = 328.0f; }
-    else if (name == "OUTPUT") { centreX = 568.0f; y = 328.0f; }
+    else if (name == "LOW") { centreX = editorLayout.secondaryKnobs[0].getCentreX(); y = 328.0f; }
+    else if (name == "MID") { centreX = editorLayout.secondaryKnobs[1].getCentreX(); y = 328.0f; }
+    else if (name == "HIGH") { centreX = editorLayout.secondaryKnobs[2].getCentreX(); y = 328.0f; }
+    else if (name == "RANGE") { centreX = editorLayout.secondaryKnobs[3].getCentreX(); y = 328.0f; }
+    else if (name == "OUTPUT") { centreX = editorLayout.secondaryKnobs[4].getCentreX(); y = 328.0f; }
+    else if (name == "INPUT") { centreX = editorLayout.input.getCentreX(); y = 328.0f; }
     const auto isDb = name == "DRIVE" || name == "GATE THRESHOLD" || name == "LOW" || name == "MID"
-                   || name == "HIGH" || name == "OUTPUT";
+                   || name == "HIGH" || name == "OUTPUT" || name == "INPUT";
     const auto parameterSpan = juce::jmax (0.000001, activeSlider->getMaximum() - activeSlider->getMinimum());
     const auto percentage = (activeSlider->getValue() - activeSlider->getMinimum()) / parameterSpan;
     const auto text = isDb ? juce::String (activeSlider->getValue(), 1) + " dB"
@@ -2657,6 +2661,7 @@ void VoidwormAudioProcessorEditor::resized()
     high.setBounds (scaled (editorLayout.secondaryKnobs[2]));
     range.setBounds (scaled (editorLayout.secondaryKnobs[3]));
     output.setBounds (scaled (editorLayout.secondaryKnobs[4]));
+    input.setBounds (scaled (editorLayout.input));
     const auto workspaceLayout = makeLowerWorkspaceLayout (editorLayout.lowerWorkspace);
     weld.setBounds (R (workspaceLayout.weldSlider.getX(), workspaceLayout.weldSlider.getY(),
                        workspaceLayout.weldSlider.getWidth(), workspaceLayout.weldSlider.getHeight()));
@@ -2698,6 +2703,7 @@ void VoidwormAudioProcessorEditor::resized()
     setLabelAt (highLabel, editorLayout.secondaryKnobs[2].getCentreX(), editorLayout.secondaryLabelY, 78.0f);
     setLabelAt (rangeLabel, editorLayout.secondaryKnobs[3].getCentreX(), editorLayout.secondaryLabelY, 94.0f);
     setLabelAt (outputLabel, editorLayout.secondaryKnobs[4].getCentreX(), editorLayout.secondaryLabelY, 78.0f);
+    setLabelAt (inputLabel, editorLayout.input.getCentreX(), editorLayout.secondaryLabelY, 78.0f);
     const auto setWorkspaceLabel = [&R] (juce::Label& label, juce::Rectangle<float> sliderArea, float width)
     {
         label.setBounds (R (sliderArea.getCentreX() - width * 0.5f, editorLayout.masterLabelY,
@@ -2733,7 +2739,7 @@ void VoidwormAudioProcessorEditor::resized()
 
     const auto smallFont = 9.0f * sy;
     for (auto* label : { &breachLabel, &tearLabel, &rotLabel, &mixLabel, &surgeLabel,
-                         &lowLabel, &midLabel, &highLabel, &rangeLabel, &outputLabel,
+                         &lowLabel, &midLabel, &highLabel, &rangeLabel, &outputLabel, &inputLabel,
                          &weldLabel, &limiterThresholdLabel, &limiterCeilingLabel, &limiterSwitchLabel })
         label->setFont (juce::FontOptions (smallFont).withName ("Bahnschrift").withStyle ("Regular"));
     for (auto* label : { &weldLabel, &limiterThresholdLabel, &limiterCeilingLabel, &limiterSwitchLabel })
@@ -2878,13 +2884,13 @@ void VoidwormAudioProcessorEditor::applySoundSnapshot (voidworm::Parameters p, c
     presetIsDirty = false;
     cleanPresetSound = p;
     processor.beginPresetChange();
-    const std::array<const char*, 11> ids {
+    const std::array<const char*, 12> ids {
         "breach", "tear", "rot", "drive", "overload", "mix",
-        "low", "mid", "high", "range", "output"
+        "low", "mid", "high", "range", "output", "input"
     };
-    const std::array<float, 11> values {
+    const std::array<float, 12> values {
         p.breach, p.tear, p.rot, p.driveDb, p.overload, p.mix,
-        p.lowDb, p.midDb, p.highDb, p.range, p.outputDb
+        p.lowDb, p.midDb, p.highDb, p.range, p.outputDb, p.inputDb
     };
     for (size_t value = 0; value < ids.size(); ++value)
         setParameterActual (processor.parameters, ids[value], values[value]);

@@ -29,6 +29,7 @@ struct Parameters
     float midDb = 0.0f;
     float highDb = 0.0f;
     float outputDb = -4.0f;
+    float inputDb = 0.0f;
     float weld = 0.30f;
     bool limiterEnabled = true;
     float limiterThresholdDb = -3.0f;
@@ -77,6 +78,9 @@ public:
     void setTargets (const Parameters& parameters) noexcept;
     void beginPresetTransition (const Parameters& parameters) noexcept;
     void process (juce::AudioBuffer<float>& buffer) noexcept;
+    // The INPUT trim as a gain, for the input meter: it reads the block before
+    // the engine runs, and scales by this to show what goes in.
+    float getInputGain() const noexcept { return inputSmooth.getTargetValue(); }
     bool isPresetTransitionActive() const noexcept
     {
         return presetTransitionState != PresetTransitionState::normal;
@@ -143,6 +147,7 @@ private:
     juce::SmoothedValue<float> midSmooth;
     juce::SmoothedValue<float> highSmooth;
     juce::SmoothedValue<float> outputSmooth;
+    juce::SmoothedValue<float> inputSmooth;
     juce::SmoothedValue<float> weldSmooth;
     juce::SmoothedValue<float> limiterThresholdSmooth;
     juce::SmoothedValue<float> limiterCeilingSmooth;

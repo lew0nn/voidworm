@@ -230,7 +230,7 @@ private:
 
     VoidwormAudioProcessor& processor;
     VoidLookAndFeel lookAndFeel;
-    TouchSlider breach, tear, overload, rot, drive, mix, low, mid, high, range, output, gateThreshold;
+    TouchSlider breach, tear, overload, rot, drive, mix, low, mid, high, range, output, gateThreshold, input;
     TouchSlider weld, limiterThreshold, limiterCeiling;
     TouchSlider reactorAmount, reactorCharacterA, reactorCharacterB;
     TouchSlider sawAmount;
@@ -253,7 +253,7 @@ private:
     voidworm::UserPresetStore userPresets;
     juce::ApplicationProperties applicationProperties;
     juce::Label breachLabel, tearLabel, overloadLabel, rotLabel, driveLabel, mixLabel, surgeLabel, gateThresholdLabel;
-    juce::Label lowLabel, midLabel, highLabel, rangeLabel, outputLabel;
+    juce::Label lowLabel, midLabel, highLabel, rangeLabel, outputLabel, inputLabel;
     juce::Label weldLabel, limiterThresholdLabel, limiterCeilingLabel, limiterSwitchLabel;
     juce::Label sawAmountLabel;
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
@@ -262,7 +262,7 @@ private:
                                 mixAttachment, gateThresholdAttachment;
     std::unique_ptr<ButtonAttachment> surgeAttachment;
     std::unique_ptr<Attachment> lowAttachment, midAttachment, highAttachment;
-    std::unique_ptr<Attachment> rangeAttachment, outputAttachment;
+    std::unique_ptr<Attachment> rangeAttachment, outputAttachment, inputAttachment;
     std::unique_ptr<Attachment> weldAttachment, limiterThresholdAttachment, limiterCeilingAttachment;
     std::unique_ptr<ButtonAttachment> limiterSwitchAttachment;
     std::unique_ptr<Attachment> reactorAmountAttachment, reactorCharacterAAttachment,

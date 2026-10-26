@@ -40,7 +40,8 @@ bool validSound (const Parameters& p) noexcept
         || p.range < 0 || p.range > 1 || p.lowDb < -12 || p.lowDb > 12 || p.midDb < -12 || p.midDb > 12
         || p.highDb < -12 || p.highDb > 12 || p.outputDb < -24 || p.outputDb > 6 || p.weld < 0 || p.weld > 1
         || p.limiterThresholdDb < -18 || p.limiterThresholdDb > 0 || p.limiterCeilingDb < -6 || p.limiterCeilingDb > 0
-        || p.gateThresholdDb < -80 || p.gateThresholdDb > -20)
+        || p.gateThresholdDb < -80 || p.gateThresholdDb > -20
+        || ! finite (p.inputDb) || p.inputDb < -24 || p.inputDb > 12)
         return false;
     if (! std::all_of (p.reactorAmounts.begin(), p.reactorAmounts.end(), [] (float value)
         { return finite (value) && value >= 0.0f && value <= 1.0f; })) return false;
@@ -154,6 +155,7 @@ juce::ValueTree UserPresetStore::makeTree (const juce::String& name, const Param
     sound.setProperty ("sawEnabled", p.sawEnabled, nullptr);
     sound.setProperty ("sawAmount", p.sawAmount, nullptr);
     sound.setProperty ("sawWave", p.sawWaveform, nullptr);
+    sound.setProperty ("input", p.inputDb, nullptr);
     constexpr std::array<const char*, 4> paths { "mass", "furnace", "arc", "feedback" };
     for (size_t i = 0; i < paths.size(); ++i)
     {
@@ -210,6 +212,8 @@ bool UserPresetStore::readTree (const juce::ValueTree& root, UserPreset& result,
     p.sawEnabled = sound.hasProperty ("sawEnabled") && static_cast<bool> (sound["sawEnabled"]);
     p.sawAmount = sound.hasProperty ("sawAmount") ? static_cast<float> (sound["sawAmount"]) : Parameters {}.sawAmount;
     p.sawWaveform = sound.hasProperty ("sawWave") ? static_cast<int> (sound["sawWave"]) : 0;
+    // INPUT came later still; a preset without it plays at 0 dB, as it was made.
+    p.inputDb = sound.hasProperty ("input") ? static_cast<float> (sound["input"]) : 0.0f;
     constexpr std::array<const char*, 4> paths { "mass", "furnace", "arc", "feedback" };
     for (size_t i = 0; i < paths.size(); ++i)
     {
@@ -312,6 +316,7 @@ bool UserPresetStore::soundStatesEqual (const Parameters& a, const Parameters& b
         || ! same (a.limiterCeilingDb,b.limiterCeilingDb) || a.reactorEnabled != b.reactorEnabled) return false;
     if (a.gateEnabled != b.gateEnabled || ! same (a.gateThresholdDb, b.gateThresholdDb)) return false;
     if (a.sawEnabled != b.sawEnabled || a.sawWaveform != b.sawWaveform || ! same (a.sawAmount, b.sawAmount)) return false;
+    if (! same (a.inputDb, b.inputDb)) return false;
     for (size_t i=0;i<4;++i) if (! same (a.reactorAmounts[i],b.reactorAmounts[i])) return false;
     const std::array<float,8> ac { a.reactorCharacter.massSaturation,a.reactorCharacter.massHarmonics,a.reactorCharacter.furnaceStarve,a.reactorCharacter.furnaceFold,a.reactorCharacter.arcXmod,a.reactorCharacter.arcFold,a.reactorCharacter.feedbackReturn,a.reactorCharacter.feedbackDamp };
     const std::array<float,8> bc { b.reactorCharacter.massSaturation,b.reactorCharacter.massHarmonics,b.reactorCharacter.furnaceStarve,b.reactorCharacter.furnaceFold,b.reactorCharacter.arcXmod,b.reactorCharacter.arcFold,b.reactorCharacter.feedbackReturn,b.reactorCharacter.feedbackDamp };

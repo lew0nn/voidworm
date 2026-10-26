@@ -167,5 +167,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createVoidwormParameterLayou
     layout.add (std::make_unique<juce::AudioParameterChoice> (
         juce::ParameterID { "sawWave", 1 }, "SAW WAVE",
         juce::StringArray { "SAW", "SQUARE", "TRIANGLE" }, 0));
+    // Last, so every earlier parameter keeps its place for hosts and sessions.
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "input", 1 }, "INPUT",
+        juce::NormalisableRange<float> { -24.0f, 12.0f, 0.01f }, 0.0f, juce::AudioParameterFloatAttributes().withLabel ("dB")));
     return layout;
 }
