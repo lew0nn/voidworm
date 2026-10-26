@@ -2437,7 +2437,8 @@ void VoidwormAudioProcessorEditor::drawEqGraph (juce::Graphics& g, juce::Rectang
                     juce::Justification::centredLeft);
         g.drawText ("FINAL STAGE", finalLabelArea.toNearestInt(),
                     juce::Justification::centredLeft);
-        // Each gain-reduction reading sits right under what it measures.
+        // WELD's gain reduction sits right under WELD. (The limiter is a safety
+        // ceiling that rarely acts; the OUTPUT meter covers it.)
         const auto drawGainReduction = [&] (float centreX, float reduction)
         {
             const auto row = juce::Rectangle<float> (centreX - 40.0f, editorLayout.gainReductionY, 80.0f, 10.0f);
@@ -2453,7 +2454,6 @@ void VoidwormAudioProcessorEditor::drawEqGraph (juce::Graphics& g, juce::Rectang
                         juce::Justification::centredLeft);
         };
         drawGainReduction (editorLayout.weld.getCentreX(), weldGainReductionDisplay);
-        drawGainReduction (layout.limiterEnabled.getCentreX(), limiterGainReductionDisplay);
     }
 
     const auto plot = reactorPage ? layout.reactorPlot : layout.masterPlot;
@@ -3252,7 +3252,6 @@ void VoidwormAudioProcessorEditor::timerCallback()
         return measured >= displayed ? measured : displayed * 0.86f + measured * 0.14f;
     };
     weldGainReductionDisplay = smoothReduction (processor.getWeldGainReductionDb(), weldGainReductionDisplay);
-    limiterGainReductionDisplay = smoothReduction (processor.getLimiterGainReductionDb(), limiterGainReductionDisplay);
     const auto hqState = processor.parameters.getRawParameterValue ("hqMode")->load() >= 0.5f;
     hqButton.setActive (hqState);
     limiterSwitch.updateAnimation();

@@ -284,7 +284,6 @@ private:
     std::array<int, 2> inputMeterHold {};
     std::array<int, 2> outputMeterHold {};
     float weldGainReductionDisplay = 0.0f;
-    float limiterGainReductionDisplay = 0.0f;
     voidworm::ui::HeaderPanelState headerPanelState;
     int uiScaleIndex = 1;
     int meterFloorIndex = 1;
