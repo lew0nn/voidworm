@@ -147,6 +147,23 @@ juce::Rectangle<float> lampBeside (juce::Rectangle<float> ink) noexcept
     return { ink.getRight() + gap, ink.getY() - size * 0.5f, size, size };
 }
 
+// Every state lamp lights the same way: off, a dark socket; on, fully lit
+// with a soft halo -- whatever the stage's amount. GATE adds a wider halo
+// while it is actually closing.
+void drawStateLamp (juce::Graphics& g, juce::Rectangle<float> lamp, bool on, juce::Colour lit,
+                    juce::Colour rim, float halo = 0.22f)
+{
+    if (on)
+    {
+        g.setColour (lit.withAlpha (halo));
+        g.fillEllipse (lamp.expanded (2.5f));
+    }
+    g.setColour (on ? lit.withAlpha (0.93f) : juce::Colour (0xff171513));
+    g.fillEllipse (lamp);
+    g.setColour (on ? rim.withAlpha (0.72f) : uiStyle::utilityEdge.withAlpha (0.72f));
+    g.drawEllipse (lamp, 0.65f);
+}
+
 void drawDistressedFrame (juce::Graphics& g, juce::Rectangle<float> area, float cornerRadius,
                            int seed, int damageCount, juce::Colour accent)
 {
@@ -2026,16 +2043,7 @@ void VoidwormAudioProcessorEditor::paint (juce::Graphics& g)
     // The glyph's upper half is the two chevron arms, x +-3.6 and y -4.3..0,
     // plus half the 1.1 px stroke.
     const auto gateLamp = lampBeside ({ gateCentreX - 4.15f, gateCentreY - 4.85f, 8.3f, 4.85f });
-    if (gateMuting)
-    {
-        g.setColour (ember.withAlpha (0.22f));
-        g.fillEllipse (gateLamp.expanded (2.5f));
-    }
-    g.setColour (gateMuting ? secondaryAccent() : gateEnabled ? crimson.withAlpha (0.86f)
-                                                               : juce::Colour (0xff171513));
-    g.fillEllipse (gateLamp);
-    g.setColour (gateEnabled ? warmWhite.withAlpha (gateMuting ? 0.82f : 0.6f) : uiStyle::utilityEdge.withAlpha (0.72f));
-    g.drawEllipse (gateLamp, 0.65f);
+    drawStateLamp (g, gateLamp, gateEnabled, ember, warmWhite, gateMuting ? 0.42f : 0.22f);
 
     drawEqGraph (g, editorLayout.lowerWorkspace);
     if (! reactorWorkspace.isReactorPage())
@@ -2121,7 +2129,6 @@ void VoidwormAudioProcessorEditor::drawStages (juce::Graphics& g)
 {
     // SURGE and SAW, two post-reactor stages drawn exactly alike beside WELD:
     // the name, an icon to click with a lamp at its corner, and the AMT knob.
-    // The icon and lamp take their brightness from the stage's AMT.
     const auto crimson = primaryAccent();
     const auto ember = secondaryAccent();
     const auto warmWhite = themeText();
@@ -2133,10 +2140,9 @@ void VoidwormAudioProcessorEditor::drawStages (juce::Graphics& g)
         g.drawVerticalLine (juce::roundToInt (x), editorLayout.masterLabelY + 1.0f, editorLayout.gainReductionY + 8.0f);
 
     const auto drawStage = [&] (const juce::Rectangle<float>& area, const juce::Rectangle<float>& knob, const juce::String& name,
-                                bool enabled, float amount, bool over,
+                                bool enabled, bool over,
                                 const std::function<juce::Rectangle<float> (float, float)>& glyph)
     {
-        const auto heat = enabled ? juce::jlimit (0.0f, 1.0f, amount) : 0.0f;
         const auto cx = area.getCentreX(), cy = editorLayout.stageGlyphCentreY;
         g.setColour (warmWhite);
         g.setFont (juce::FontOptions (8.0f).withName ("Bahnschrift").withStyle ("SemiBold"));
@@ -2150,23 +2156,13 @@ void VoidwormAudioProcessorEditor::drawStages (juce::Graphics& g)
         }
         // The icon keeps one colour; the lamp alone says on or off, and how much.
         g.setColour (over ? warmWhite.withAlpha (0.86f) : dimText.withAlpha (0.80f));
-        const auto lamp = lampBeside (glyph (cx, cy));
-        if (heat > 0.04f)
-        {
-            g.setColour (ember.withAlpha (0.22f * heat));
-            g.fillEllipse (lamp.expanded (2.5f));
-        }
-        g.setColour (enabled ? crimson.interpolatedWith (ember, heat).withAlpha (0.45f + 0.48f * heat)
-                             : juce::Colour (0xff171513));
-        g.fillEllipse (lamp);
-        g.setColour (enabled && heat > 0.04f ? warmWhite.withAlpha (0.72f) : uiStyle::utilityEdge.withAlpha (0.72f));
-        g.drawEllipse (lamp, 0.65f);
+        drawStateLamp (g, lampBeside (glyph (cx, cy)), enabled, ember, warmWhite);
     };
 
     const auto load = [this] (const char* id) { return processor.parameters.getRawParameterValue (id)->load(); };
 
     // SURGE: a lightning bolt, slanted and solid in both states.
-    drawStage (editorLayout.surgeButton, editorLayout.surgeAmount, "SURGE", load ("surge") >= 0.5f, load ("surgeAmount"), surgeButton.isMouseOver(),
+    drawStage (editorLayout.surgeButton, editorLayout.surgeAmount, "SURGE", load ("surge") >= 0.5f, surgeButton.isMouseOver(),
                [&g] (float cx, float cy)
                {
                    const auto h = 9.0f, w = 6.2f;
@@ -2186,7 +2182,7 @@ void VoidwormAudioProcessorEditor::drawStages (juce::Graphics& g)
     const auto sawWave = juce::jlimit (0, 2, juce::roundToInt (load ("sawWave")));
     const std::array<const char*, 3> sawWaveNames { "SAW", "SQR", "TRI" };
     drawStage (editorLayout.sawButton, editorLayout.sawAmount, sawWaveNames[static_cast<size_t> (sawWave)], load ("sawEnabled") >= 0.5f,
-               load ("sawAmount"), sawButton.isMouseOver(),
+               sawButton.isMouseOver(),
                [&g, sawWave, k] (float cx, float cy)
                {
                    const auto span = 6.5f * k, rise = 4.0f * k;
