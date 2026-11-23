@@ -28,12 +28,18 @@ juce_add_binary_data(VOIDWORM_Assets
         Source/Assets/extracted_reference_faceplate_v1.png
         Source/Assets/hellforge_neon_faceplate_v1.png)
 
+# AU only exists on macOS (Logic, GarageBand); Windows keeps VST3 + Standalone.
+set(VOIDWORM_FORMATS VST3 Standalone)
+if (APPLE)
+    list(APPEND VOIDWORM_FORMATS AU)
+endif()
+
 juce_add_plugin(VOIDWORM
     COMPANY_NAME "LWNX DSP"
     BUNDLE_ID "io.github.lew0nn.voidworm"
     PLUGIN_MANUFACTURER_CODE Vdwm
     PLUGIN_CODE VdWm
-    FORMATS VST3 Standalone
+    FORMATS ${VOIDWORM_FORMATS}
     PRODUCT_NAME "VOIDWORM"
     DESCRIPTION "Source-reactive parallel industrial audio processor"
     VST3_CATEGORIES Fx Distortion Dynamics

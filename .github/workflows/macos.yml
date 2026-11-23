@@ -1,0 +1,84 @@
+name: macOS build
+
+# Universal (Apple Silicon + Intel) AU, VST3 and standalone app, ad-hoc signed: the zips plus one installer (.pkg in a .dmg).
+on:
+  workflow_dispatch:
+  push:
+    branches: [macos]
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+
+      - name: Build
+        run: cmake --build build --config Release --target VOIDWORM_AU VOIDWORM_VST3 VOIDWORM_Standalone -j"$(sysctl -n hw.ncpu)"
+
+      - name: Sign (ad hoc) and package
+        run: |
+          VERSION=$(sed -n 's/^project(VOIDWORM VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          ART=build/VOIDWORM_artefacts/Release
+          mkdir -p dist
+          for b in "$ART/AU/VOIDWORM.component" "$ART/VST3/VOIDWORM.vst3" "$ART/Standalone/VOIDWORM.app"; do
+            codesign --force --deep --sign - "$b"
+            codesign --verify --deep --strict "$b"
+            lipo -info "$(find "$b/Contents/MacOS" -type f | head -1)"
+          done
+          ditto -c -k --keepParent "$ART/AU/VOIDWORM.component" "dist/VOIDWORM-$VERSION-macOS-AU.zip"
+          ditto -c -k --keepParent "$ART/VST3/VOIDWORM.vst3" "dist/VOIDWORM-$VERSION-macOS-VST3.zip"
+          ditto -c -k --keepParent "$ART/Standalone/VOIDWORM.app" "dist/VOIDWORM-$VERSION-macOS-Standalone.zip"
+          ls -la dist
+
+      # One installer for all three (Customize can leave any out). Files a .pkg installs aren't quarantined.
+      # Unsigned: macOS asks once (Privacy & Security, Open Anyway).
+      - name: Installer (.pkg in a .dmg)
+        run: |
+          VERSION=$(sed -n 's/^project(VOIDWORM VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          ART=build/VOIDWORM_artefacts/Release
+          mkdir -p pkgs dmg
+          part() {  # name, bundle, install folder
+            mkdir -p "root/$1"; ditto "$2" "root/$1/$(basename "$2")"
+            pkgbuild --analyze --root "root/$1" "$1.plist"
+            plutil -replace 0.BundleIsRelocatable -bool NO "$1.plist"   # always into the standard folder
+            pkgbuild --root "root/$1" --component-plist "$1.plist" --identifier "com.lewonn.voidworm.$1" --version "$VERSION" \
+                     --install-location "$3" "pkgs/$1.pkg"
+          }
+          part app "$ART/Standalone/VOIDWORM.app" /Applications
+          part au "$ART/AU/VOIDWORM.component" /Library/Audio/Plug-Ins/Components
+          part vst3 "$ART/VST3/VOIDWORM.vst3" /Library/Audio/Plug-Ins/VST3
+          productbuild --synthesize --package pkgs/app.pkg --package pkgs/au.pkg --package pkgs/vst3.pkg dist.xml
+          sed -i '' -e 's/customize="never"/customize="allow"/' -e "s|<installer-gui-script minSpecVersion=\"[0-9]*\">|&<title>VOIDWORM $VERSION</title>|" \
+            -e 's|id="com.lewonn.voidworm.app" visible="false"|id="com.lewonn.voidworm.app" visible="true" title="VOIDWORM app" description="The standalone app, in Applications."|' \
+            -e 's|id="com.lewonn.voidworm.au" visible="false"|id="com.lewonn.voidworm.au" visible="true" title="Audio Unit (AU)" description="For Logic, GarageBand and other AU hosts."|' \
+            -e 's|id="com.lewonn.voidworm.vst3" visible="false"|id="com.lewonn.voidworm.vst3" visible="true" title="VST3" description="For Ableton Live, FL Studio, Reaper, Cubase and others."|' dist.xml
+          cat dist.xml
+          productbuild --distribution dist.xml --package-path pkgs "dmg/Install VOIDWORM.pkg"
+          printf '%s\n' "1. Double-click Install VOIDWORM.pkg." \
+            "2. If macOS says it can't check it: open System Settings > Privacy & Security, scroll down, press Open Anyway." \
+            "3. The installer puts VOIDWORM in Applications and the AU and VST3 plug-ins in /Library/Audio/Plug-Ins." > "dmg/READ ME.txt"
+          hdiutil create -volname "VOIDWORM $VERSION" -srcfolder dmg -ov -format UDZO "dist/VOIDWORM-$VERSION-macOS.dmg"
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VOIDWORM-macOS
+          path: |
+            dist/*.zip
+            dist/*.dmg
+
+      - name: Validate the AU (auval)
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R build/VOIDWORM_artefacts/Release/AU/VOIDWORM.component ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar || true
+          auval -v aufx VdWm Vdwm
