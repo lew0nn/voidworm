@@ -34,12 +34,20 @@ if (APPLE)
     list(APPEND VOIDWORM_FORMATS AU)
 endif()
 
+# The Mac app icon must reach juce_add_plugin itself: setting JUCE_ICON_BIG afterwards left the bundle
+# with no .icns. Windows takes the multi-size .ico through its own .rc file below.
+set(VOIDWORM_ICON)
+if (NOT WIN32)
+    set(VOIDWORM_ICON ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/VOIDWORM_Master_Artwork_512.png")
+endif()
+
 juce_add_plugin(VOIDWORM
     COMPANY_NAME "LWNX DSP"
     BUNDLE_ID "io.github.lew0nn.voidworm"
     PLUGIN_MANUFACTURER_CODE Vdwm
     PLUGIN_CODE VdWm
     FORMATS ${VOIDWORM_FORMATS}
+    ${VOIDWORM_ICON}
     PRODUCT_NAME "VOIDWORM"
     DESCRIPTION "Source-reactive parallel industrial audio processor"
     VST3_CATEGORIES Fx Distortion Dynamics
@@ -129,9 +137,6 @@ if (WIN32)
     target_compile_definitions(VOIDWORM PUBLIC
         JUCE_USER_DEFINED_RC_FILE="${CMAKE_CURRENT_SOURCE_DIR}/Source/Windows/VOIDWORM.rc"
         VOIDWORM_APP_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/VOIDWORM_Windows_Icon.ico")
-else()
-    set_target_properties(VOIDWORM PROPERTIES
-        JUCE_ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/VOIDWORM_Master_Artwork_512.png")
 endif()
 
 if (VOIDWORM_BUILD_PERF_AUDIT)
