@@ -27,10 +27,12 @@ jobs:
       - name: Blocks within the prepared size
         env:
           ASAN_OPTIONS: abort_on_error=1:detect_leaks=0
-        run: "$(find build-asan -type f -perm -u+x -name VOIDWORM_BlockSizeStress | head -1)"
+        run: |
+          "$(find build-asan -type f -perm -u+x -name VOIDWORM_BlockSizeStress | head -1)"
 
       - name: Blocks larger than prepared
         if: always()
         env:
           ASAN_OPTIONS: abort_on_error=1:detect_leaks=0
-        run: "$(find build-asan -type f -perm -u+x -name VOIDWORM_BlockSizeStress | head -1)" oversize
+        run: |
+          "$(find build-asan -type f -perm -u+x -name VOIDWORM_BlockSizeStress | head -1)" oversize
