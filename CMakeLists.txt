@@ -169,6 +169,9 @@ juce_generate_juce_header(VOIDWORM)
 
 target_sources(VOIDWORM_Standalone PRIVATE
     Source/Standalone/VoidwormStandalone.cpp)
+if (APPLE)
+    target_sources(VOIDWORM PRIVATE Source/Standalone/MacWindowDrag.mm)   # native window drag (see the file)
+endif()
 target_compile_definitions(VOIDWORM_Standalone PRIVATE
     JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
 

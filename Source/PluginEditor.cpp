@@ -1782,10 +1782,18 @@ void VoidwormAudioProcessorEditor::showStandaloneToast (const juce::String& mess
     standaloneToast.repaint();
 }
 
+#if JUCE_MAC
+namespace voidworm { bool beginNativeWindowDrag (void* nativeView); } // Standalone/MacWindowDrag.mm
+#endif
+
 void VoidwormAudioProcessorEditor::beginStandaloneWindowDrag (const juce::MouseEvent& event)
 {
     if (auto* topLevel = getTopLevelComponent())
     {
+       #if JUCE_MAC
+        if (voidworm::beginNativeWindowDrag (topLevel->getWindowHandle()))
+            return;
+       #endif
         standaloneWindowDragger.startDraggingComponent (topLevel, event.getEventRelativeTo (topLevel));
         draggingStandaloneWindow = true;
     }
