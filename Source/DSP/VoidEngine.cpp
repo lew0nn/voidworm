@@ -15,6 +15,9 @@ float finiteClamped (float value, float low, float high, float fallback) noexcep
 void VoidEngine::prepare (double newSampleRate, int maximumBlockSize, int channels)
 {
     jassert (newSampleRate > 0.0 && maximumBlockSize > 0);
+    // process() feeds processChunk at most sourceAnalysisChunkSize samples at a time, so size every buffer for at
+    // least one whole chunk: with a host buffer below 32 (macOS offers 14 and 15) a 32-sample chunk overran them.
+    maximumBlockSize = juce::jmax (maximumBlockSize, sourceAnalysisChunkSize);
     sampleRate = juce::jmax (1.0, newSampleRate);
     channelCount = juce::jlimit (1, 2, channels);
     outputTone.prepare (sampleRate, channelCount);
