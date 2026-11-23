@@ -37,7 +37,9 @@ endif()
 # The Mac app icon must reach juce_add_plugin itself: setting JUCE_ICON_BIG afterwards left the bundle
 # with no .icns. Windows takes the multi-size .ico through its own .rc file below.
 set(VOIDWORM_ICON)
-if (NOT WIN32)
+if (APPLE)   # the emblem fitted to Apple's 1024 icon grid, so it matches other apps in the Dock (_build/voidworm-art/mac_icon.py M1)
+    set(VOIDWORM_ICON ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/VOIDWORM_Mac_Icon_1024.png")
+elseif (NOT WIN32)
     set(VOIDWORM_ICON ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/VOIDWORM_Master_Artwork_512.png")
 endif()
 
