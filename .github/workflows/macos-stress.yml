@@ -1,0 +1,36 @@
+name: macOS memory check
+
+# Debug aid: the real processor and editor under AddressSanitizer, through every block size, rate and layout.
+on:
+  workflow_dispatch:
+  push:
+    branches: [macos]
+
+jobs:
+  asan:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (AddressSanitizer)
+        run: >
+          cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DVOIDWORM_BUILD_STRESS=ON
+          -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O1 -g"
+          -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O1 -g"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
+
+      - name: Build
+        run: cmake --build build-asan --target VOIDWORM_BlockSizeStress -j"$(sysctl -n hw.ncpu)"
+
+      - name: Blocks within the prepared size
+        env:
+          ASAN_OPTIONS: abort_on_error=1:detect_leaks=0
+        run: "$(find build-asan -type f -perm -u+x -name VOIDWORM_BlockSizeStress | head -1)"
+
+      - name: Blocks larger than prepared
+        if: always()
+        env:
+          ASAN_OPTIONS: abort_on_error=1:detect_leaks=0
+        run: "$(find build-asan -type f -perm -u+x -name VOIDWORM_BlockSizeStress | head -1)" oversize

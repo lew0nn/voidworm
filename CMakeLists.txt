@@ -13,6 +13,7 @@ endif()
 
 option(VOIDWORM_BUILD_PERF_AUDIT "Build the non-shipping CPU performance audit tool" OFF)
 option(VOIDWORM_ENABLE_PERF_STAGE_TIMERS "Enable stage timers for the CPU audit tool" OFF)
+option(VOIDWORM_BUILD_STRESS "Build the non-shipping block-size stress tool (run under AddressSanitizer)" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -159,6 +160,22 @@ if (VOIDWORM_BUILD_PERF_AUDIT)
         JUCE_VST3_CAN_REPLACE_VST2=0
         VOIDWORM_ENABLE_PERF_PROFILING=$<BOOL:${VOIDWORM_ENABLE_PERF_STAGE_TIMERS}>)
     juce_generate_juce_header(VOIDWORM_PerformanceAudit)
+endif()
+
+if (VOIDWORM_BUILD_STRESS)
+    juce_add_console_app(VOIDWORM_BlockSizeStress
+        PRODUCT_NAME "VOIDWORM_BlockSizeStress")
+    target_sources(VOIDWORM_BlockSizeStress PRIVATE
+        Tools/BlockSizeStress.cpp)
+    target_link_libraries(VOIDWORM_BlockSizeStress PRIVATE
+        VOIDWORM
+        juce::juce_audio_utils
+        juce::juce_gui_extra)
+    target_compile_definitions(VOIDWORM_BlockSizeStress PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_VST3_CAN_REPLACE_VST2=0)
+    juce_generate_juce_header(VOIDWORM_BlockSizeStress)
 endif()
 
 target_link_libraries(VOIDWORM PRIVATE
