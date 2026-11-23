@@ -32,6 +32,7 @@ jobs:
           APP="$ART/Standalone/VOIDWORM.app/Contents"
           ICON=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIconFile' "$APP/Info.plist")
           [ -n "$ICON" ] && [ -f "$APP/Resources/$ICON" ] || { echo "The app has no icon (CFBundleIconFile='$ICON')"; exit 1; }
+          /usr/libexec/PlistBuddy -c 'Print NSMicrophoneUsageDescription' "$APP/Info.plist" || { echo "No microphone permission text: macOS would give silent input"; exit 1; }
           for b in "$ART/AU/VOIDWORM.component" "$ART/VST3/VOIDWORM.vst3" "$ART/Standalone/VOIDWORM.app"; do
             codesign --force --deep --sign - "$b"
             codesign --verify --deep --strict "$b"

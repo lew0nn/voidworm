@@ -50,6 +50,9 @@ juce_add_plugin(VOIDWORM
     PLUGIN_CODE VdWm
     FORMATS ${VOIDWORM_FORMATS}
     ${VOIDWORM_ICON}
+    # macOS gives an app silent input unless its Info.plist says why it wants the microphone
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    MICROPHONE_PERMISSION_TEXT "VOIDWORM processes the sound from your microphone or audio interface."
     PRODUCT_NAME "VOIDWORM"
     DESCRIPTION "Source-reactive parallel industrial audio processor"
     VST3_CATEGORIES Fx Distortion Dynamics
